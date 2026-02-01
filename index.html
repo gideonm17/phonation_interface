@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galen Phonation Interface (Standalone)</title>
+
+    <!-- Error handler removed to allow app to run despite non-fatal Script Errors -->
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'parchment': '#f4ecc2',
+                        'ink': '#2a2a2a',
+                        'galen-red': '#8b0000',
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Import Map with Deduped Dependencies -->
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18.2.0",
+                "react-dom": "https://esm.sh/react-dom@18.2.0",
+                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+                "three": "https://esm.sh/three@0.160.0",
+                "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.16?external=react,react-dom,three",
+                "@react-three/drei": "https://esm.sh/@react-three/drei@9.102.0?external=react,react-dom,three,@react-three/fiber",
+                "zustand": "https://esm.sh/zustand@4.5.2?external=react",
+                "clsx": "https://esm.sh/clsx@2.1.0",
+                "framer-motion": "https://esm.sh/framer-motion@10.16.16?external=react,react-dom"
+            }
+        }
+    </script>
+
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            background-color: #f4ecc2;
+            color: #2a2a2a;
+            overflow: hidden;
+        }
+
+        /* Hide scrollbar for narrative panel */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        #error-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(139, 0, 0, 0.9);
+            color: white;
+            padding: 2rem;
+            z-index: 9999;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="error-overlay"></div>
+    <div id="root"></div>
+
+
+    <script>
+        window.addEventListener('load', function () {
+            const scriptContent = document.getElementById('app-source').textContent;
+            try {
+                // Manually transform JSX to JS, preserving ES imports/exports
+                const output = Babel.transform(scriptContent, {
+                    presets: ['react'],
+                    filename: 'app.tsx',
+                    // explicit targets to avoid the "esmodules must be boolean" error from auto-config
+                    targets: { esmodules: true }
+                }).code;
+
+                // Create a blob and load it as a module
+                const blob = new Blob([output], { type: 'application/javascript' });
+                const url = URL.createObjectURL(blob);
+                const script = document.createElement('script');
+                script.type = 'module';
+                script.src = url;
+                document.body.appendChild(script);
+                console.log("Manual Babel bootstrap successful.");
+            } catch (e) {
+                console.error("Babel bootstrap failed:", e);
+                // Fallback basic error display
+                document.body.innerHTML = '<h1 style="color:red; padding:20px;">Babel Bootstrap Error: ' + e.message + '</h1><pre style="padding:20px;">' + e.stack + '</pre>';
+            }
+        });
+    </script>
+
+    <script id="app-source" type="text/plain">
+        import React, { useRef, useMemo, useEffect, useState } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Canvas, useFrame } from '@react-three/fiber';
+        import { OrbitControls, Environment, ContactShadows, Html } from '@react-three/drei';
+        import * as THREE from 'three';
+        import { create } from 'zustand';
+        import clsx from 'clsx';
+
+        // --- DATA & GLOSSARY ---
+
+        const GLOSSARY = {
+            "Plēgē": {
+                term: "Plēgē",
+                def: "The mechanical impact of the accelerated air against the cartilaginous body. As described in the thesis (PHP 2.4.26-28), this impact is like a plectrum striking a string, transforming the Ekphysesis into Voice.",
+                url: "https://www.atlomy.com/term/plege"
+            },
+            "Voice": {
+                term: "Phōnē",
+                def: "The foremost vehicle of thought. A meaningful sound produced by the soul through the active mechanism of the larynx.",
+                url: "https://www.atlomy.com/term/phone"
+            },
+            "Pneuma": {
+                term: "Pneuma",
+                def: "The vital spirit or 'breath' that permeates the body. In phonation, it serves as the raw material.",
+                url: "https://www.atlomy.com/term/pneuma"
+            },
+            "Ekphysesis": {
+                term: "Ekphysesis",
+                def: "Forceful Exhalation. A sudden, muscular activity originating in the thorax that pushes air vehemently.",
+                url: "https://www.atlomy.com/lemma/23674-ekphus%C4%93sis?search_word=%CE%B5%CE%BA%CF%86%CF%85%CF%83%CE%B7%CF%83%CE%B9%CF%82"
+            },
+            "Glottis": {
+                term: "Glōttis",
+                def: "The 'Tongue of the Larynx'. A complex valve consisting of paired membranous lips (vestibular folds) and cavities (ventricles).",
+                url: "https://www.atlomy.com/term/glottis"
+            },
+            "Arytenoid": {
+                term: "Arytaina",
+                def: "The 'Ewer-shaped' or 'Pitcher-like' cartilage. Galen describes it as a singular, fused structure at the apex.",
+                url: "https://www.atlomy.com/lemma/23653-arytainoeid%C4%93s?search_word=%CE%B1%CF%81%CF%85%CF%84%CE%B1%CE%B9%CE%BD%CE%BF%CE%B5%CE%B9%CE%B4%CE%B7%CF%82"
+            },
+            "Thyroid": {
+                term: "Thuroeidēs",
+                def: "The 'Shield-like' cartilage. It forms the large, protective anterior wall of the larynx.",
+                url: "https://www.atlomy.com/lemma/23673-thyreoeid%C4%93s?search_word=%CE%B8%CF%85%CF%81%CE%B5%CE%BF%CE%B5%CE%B9%CE%B4%CE%B7%CF%82"
+            },
+            "Cricoid": {
+                term: "Krikoeidēs",
+                def: "The 'Ring-like' cartilage. It forms the base of the larynx, sitting atop the trachea.",
+                url: "https://www.atlomy.com/lemma/23652-deuteros?search_word=%CE%B4%CE%B5%CF%85%CF%84%CE%B5%CF%81%CE%BF%CF%82"
+            },
+            "Muscles": {
+                term: "Special Muscles",
+                def: "The twelve intrinsic muscles of the larynx.",
+                url: "https://www.atlomy.com/term/laryngeal-muscles"
+            },
+            "Nerves": {
+                term: "Palindromoun",
+                def: "The Recurrent Laryngeal Nerve. It 'runs back' from the thorax to the larynx.",
+                url: "https://www.atlomy.com/lemma/23498-neuron?search_word=%CE%BD%CE%B5%CF%85%CF%81%CE%BF%CE%BD"
+            },
+            "Whirlpool": {
+                term: "Iliggos",
+                def: "A swirling motion of air within the ventricles of the glottis.",
+                url: "https://www.atlomy.com/term/iliggos"
+            }
+        };
+
+        const SCRIPT_PNEUMA = [
+            {
+                id: "pneuma_intro",
+                title: "I. Pneuma and Voice",
+                content: "\"In ancient medical theory, voice is not produced by air alone but by pneuma—an active, warmed, and forcefully expelled substance—whose movement through the body is regulated, intensified, and transformed before voice emerges.\"",
+                media: "schematic"
+            },
+            {
+                id: "pneuma_brain",
+                title: "1. Origin and Regulation",
+                content: "The process begins with the Enkephalos (Brain). It acts as the coordinating center, sending the impulse through the nerves. It is a governance of motion, not just a signal.",
+                media: "schematic"
+            },
+            {
+                id: "pneuma_thorax",
+                title: "2. Generation and Intensification",
+                content: "In the Thorax, inhaled air is warmed and transformed into <Pneuma>Pneuma</Pneuma> within the Lungs. The intercostal muscles and abdominal muscles compress the chest, generating the forceful <Ekphysesis>Ekphysesis</Ekphysesis> required for voice.",
+                media: "schematic"
+            },
+            {
+                id: "pneuma_trachea",
+                title: "3. Directed Upward Motion",
+                content: "The energetic <Pneuma>Pneuma</Pneuma> rushes upward through the Trachea as a directed flow. It is not passive airflow but a 'suitable material' charged with intensity.",
+                media: "schematic"
+            },
+            {
+                id: "pneuma_larynx",
+                title: "4. Transformation at the Larynx",
+                content: "The <Glottis>Glottis</Glottis> acts as the critical valve. By narrowing, it resists the upward flow, increasing the tension and density of the pneuma before the strike.",
+                media: "schematic"
+            },
+            {
+                id: "pneuma_strike",
+                title: "5. The Strike (Plēgē)",
+                content: "The accelerated <Ekphysesis>Ekphysesis</Ekphysesis> is struck by the cartilages of the larynx. Like a plectrum hitting a string, this physical impact (<Plēgē>Plēgē</Plēgē>) against the fast-moving pneuma is the generative act of voice.",
+                media: "schematic"
+            },
+            {
+                id: "pneuma_voice",
+                title: "6. Emergence of Voice",
+                content: "Finally, from this strike, <Voice>Voice</Voice> emerges—not as the air itself, but as the shockwave resulting from the impact, radiating outward to the listener.",
+                media: "schematic"
+            }
+        ];
+
+        const SCRIPT_LARYNX = [
+            {
+                id: "intro_instrument",
+                title: "The Larynx: Instrument of voice",
+                content: "\"Voice is the foremost vehicle of thought: a vivid and living bridge between the soul and the world beyond.\" Galen defines it as a mechanism involving specific anatomical structures.",
+                media: "image",
+                mediaUrl: "./reference/glottis_illustration(1).png"
+            },
+            {
+                id: "cartilages",
+                title: "1. Cartilages of the Larynx",
+                content: "The <Thyroid>Thyroid</Thyroid> is \"a large, shield-shaped cartilage in the front of the larynx.\" The <Cricoid>Cricoid</Cricoid> is \"said to have a circular shape, like a ring.\" The <Arytenoid>Arytenoid</Arytenoid> is mentioned \"as one rather than two separate structures... the term derives from ἀρύταινα, denoting 'jug.'\"",
+                media: "image",
+                mediaUrl: "./reference/glottis_illustration(1).png"
+            },
+            {
+                id: "muscles",
+                title: "2. Laryngeal Muscles",
+                content: "Galen identifies twelve <Muscles>Special Muscles</Muscles>. \"Among this group... the thyroarytenoid muscles are the most crucial for phonation... responsible for closing [the glottis]... Galen remarks that nature (φύσις) has demonstrated superb skill in constructing them.\"",
+                media: "image",
+                mediaUrl: "./reference/glottis_illustration(1).png"
+            },
+            {
+                id: "nerves",
+                title: "3. Laryngeal Nerves",
+                content: "\"The <Nerves>recurrent laryngeal nerves</Nerves> (τό παλινδρομοῦν νεῦρον) are described as two small nerves ascending from below... Galen names it 'unjust' (ἄδικον) that this nerve would not reach from the brain, and he praises nature for constructing it the way it is.\"",
+                media: "image",
+                mediaUrl: "./reference/glottis_illustration(1).png"
+            },
+            {
+                id: "glottis_def",
+                title: "4. The Glottis (Ti Sōma)",
+                content: "\"In its inner cavity... is fixed <Glottis>a certain body</Glottis>... that resembles neither in substance nor in structure to any of the other body parts... which indeed I name glōttis and the tongue of the larynx.\"",
+                media: "image",
+                mediaUrl: "./reference/glottis_illustration(1).png"
+            },
+            {
+                id: "ekphysesis",
+                title: "5. The Material: Ekphysesis",
+                content: "\"Phonation requires <Ekphysesis>Ekphysesis</Ekphysesis>... a forceful, muscularly generated exhalation with degrees of intensity, and as an activity (ἐνέργεια)... 'a kind of suitable material of voice' (ὕλη τις οἰκεία φωνῆς).\"",
+                media: "video",
+                mediaUrl: "./reference/glottis animation.mp4",
+                timeRange: [0, 5]
+            },
+            {
+                id: "narrowing",
+                title: "6. The Narrowing",
+                content: "The structure of the valves \"makes the air spin inside in what Galen calls 'some kind of a <Whirlpool>whirlpool experience</Whirlpool>' (οἷον ἴλιγγόν τινα παθὸν).\"",
+                media: "video",
+                mediaUrl: "./reference/glottis animation.mp4",
+                timeRange: [5, 10]
+            },
+            {
+                id: "strike",
+                title: "7. The Strike (Plēgē)",
+                content: "\"For the <Ekphysesis>Ekphysesis</Ekphysesis>, which is <Strike>struck</Strike> by the cartilages of the larynx as if it were struck by some plectrums, becomes this voice.\"",
+                media: "video",
+                mediaUrl: "./reference/glottis animation.mp4",
+                timeRange: [10, 15]
+            }
+        ];
+
+        const SCRIPT_ANALYSIS = [
+            {
+                id: "analysis_intro",
+                title: "1. The Nature of the Glottis",
+                content: "The muscles and the cartilages of the larynx were indeed described: it shall be spoken now about the other parts in what follows. In its (the larynx's) inner cavity, through which pneuma passes in and out, is fixed a certain body, on which I shortly spoke before, that resembles neither in substance nor in structure to any of the other body parts in all of the body. I have also spoken about it in my treatise On The Voice, showing that it is the first and the most proper organ of the voice, and it will be said now, as much as is necessary for the present affairs.",
+                greek: "Περὶ μὲν δὴ τῶν μυῶν τε καὶ τῶν χόνδρων τοῦ λάρυγγος εἴρηται· περὶ δὲ τῶν ἄλλων ἐφεξῆς λεγέσθω. κατὰ τὴν ἔνδον χώραν αὐτοῦ, δι' ἧς εἴσω τε καὶ ἔξω τὸ πνεῦμα φέρεται, τέτακταί τι σῶμα, περὶ οὗ μικρὸν ἔμπροσθεν εἶπον, οὔτε τὴν οὐσίαν, οὔτε τὸ σχῆμα παραπλήσιον ἑτέρῳ τινὶ τῶν καθ' ὅλον τὸ ζῶον. ὑπὲρ οὗ λέλεκται μέν μοι κᾀν τοῖς περὶ φωνῆς, ἐπιδεικνύντι τὸ πρῶτόν τε καὶ κυριώτατον ὑπάρχειν αὐτὸ τῆς φωνῆς ὄργανον· εἰρήσεται δὲ καὶ νῦν, ὅσον εἰς τὰ παρόντα ἐστὶ χρήσιμον",
+                media: "image",
+                mediaUrl: "reference/glottis_illustration(1).png",
+                reference: "Gal. UP.7.13, 407,19 - 26 Helmreich = 3.560 - 561 Kühn"
+            },
+            {
+                id: "analysis_aulos",
+                title: "2. The Aulos Analogy",
+                content: "It resembles the mouthpiece (glōttis) of an aulos (ἀυλός), especially when it is viewed from below or above. I mean below, where the (rough) artery and the larynx meet [Cricotracheal ligament]: I mean above, through the orifice that is formed by the borders of the arytenoid and thyroid cartilages. It would be better not to liken that body to the mouthpieces of auloi, but rather to liken the mouthpieces to that body.",
+                greek: "ἔοικε μὲν οὖν αὐλοῦ γλώττῃ, μάλιστα κάτωθέν τε καὶ ἄνωθεν αὐτὸ θεωμένῳ. λέγω δὲ κάτωθεν μὲν, ἵνα συνάπτουσιν ἀλλήλοις ἥ τ' ἀρτηρία καὶ ὁ λάρυγξ· ἄνωθεν δὲ, κατὰ τὸ στόμα τὸ γεννώμενον ὑπὸ τῶν ταύτῃ περάτων τοῦ τε ἀρυταινοειδοῦς χόνδρου καὶ τοῦ θυρεοειδοῦς. ἄμεινον δ' ἦν ἄρα μὴ τοῦτο τὸ σῶμα ταῖς τῶν αὐλῶν γλώτταις εἰκάζειν, ἀλλ' ἐκείνας τῷδε.",
+                media: "image",
+                mediaUrl: "reference/glottis_illustration(1).png",
+                reference: "Gal. UP. 7. 13. 407-8. 26-18 Helmreich = 3. 561 Kühn"
+            },
+            {
+                id: "analysis_nature_craft",
+                title: "3. Nature vs. Craft",
+                content: "For I think nature is prior in time and wiser in actions than the 'craft'. Therefore, this body (glōttis) is a deed of nature, and that which in the aulos is an invention of skill, that (the invention) would be an imitation of it (the body), invented by a wise man who is able to understand and imitate the deeds of nature. Well, the aulos is useless without its mouthpiece; the evidence proves that. There is no need to yearn to hear the reason in this work, for it was said in the treatise On the Voice, where it was straightforwardly demonstrated that it is not possible to generate a voice without the narrowing of the passage.",
+                greek: "καὶ γὰρ καὶ πρότερον, οἶμαι, τῷ χρόνῳ καὶ σοφώτερον τοῖς ἔργοις ἡ φύσις τῆς τέχνης ἐστίν. ὥστ', εἴπερ τουτὶ μὲν τὸ σῶμα φύσεως ἔργον ὑπάρχει, τέχνης δ'εὕρημά ἐστι τὸ κατὰ τοὺς αὐλοὺς, ἐκεῖνο τούτου μίμημα ἂν εἴη, πρὸς ἀνδρὸς εὑρημένον σοφοῦ, γνωρίζειν τε καὶ μιμεῖσθαι τὰ τῆς φύσεως ἔργα δυναμένου. ὅτι μὲν οὖν χωρὶς τῆς γλώττης ἄχρηστος ὁ αὐλὸς, αὐτὸ δείκνυσι τὸ φαινόμενον. αἰτίαν δ' οὐ χρὴ ποθεῖν ἀκούειν ἐν τῷ παρόντι λόγῳ. λέλεκται γὰρ ἐν τῇ περὶ φωνῆς πραγματείᾳ, καθ' ἣν καὶ τοῦτο εὐθὺς ἀποδέδεικται, τὸ μὴ δύνασθαι γενέσθαι φωνὴν ἄνευ τοῦ στενωθῆναι τὴν διέξοδον.",
+                media: "image",
+                mediaUrl: "reference/glottis_illustration(1).png",
+                reference: "Gal. UP. 7. 13. 408. 7-18 Helmreich = 561 Kühn"
+            },
+            {
+                id: "analysis_narrowing",
+                title: "4. Necessity of Narrowing",
+                content: "For if only the whole passage would entirely fall back, while the first two cartilages (thyroid and cricoid) are loosed and separated from each other, and the third (arytenoid) lied open, lest ever it would be possible to produce voice: but if the pneuma would be carried with no motion outside, a soundless expiration will be achieved: but if the pneuma would be carried at once and vehemently, what is called \"to sigh\" will be produced. In order that the animal would phonate, it requires a sudden carrying (of pneuma) from all of the parts below, and it requires no less of that and the passage in the larynx to be narrow and not simply narrow, but it is led gradually from the wide to the narrow part, and gradually it is widens again back from the narrow part. That is exactly how that body in our current discussion works, which indeed I name glōttis and the tongue of the larynx.",
+                greek: "εἰ γὰρ ἀναπεπταμένη τελέως εἴη σύμπασα, κεχαλασμένων μὲν τῶν πρώτων δυοῖν χόνδρων καὶ διεστώτων ἀπ' ἀλλήλων, ἀνεῳγμένου δὲ τοῦ τρίτου, μή ποτ' ἂν δύνασθαι γενέσθαι φωνήν· ἀλλ' εἰ μὲν ἀτρέμα τὸ πνεῦμα ἔξω φέροιτο, τὴν χωρὶς ψόφου συντελουμένην ἐκπνοήν· εἰ δ' ἀθρόως τε καὶ σφοδρῶς, τὸ καλούμενον στενάζειν γιγνόμενον. ἵνα δὲ φωνήσῃ τὸ ζῶον, δεῖσθαι πάντως καὶ τῆς κάτωθεν φορᾶς ἀθροωτέρας, δεῖσθαι δ' οὐδὲν ἧττον ταύτης καὶ τῆς κατὰ τὸν λάρυγγα διεξόδου στενωτέρας, καὶ οὐχ ἁπλῶς γε στενωτέρας, ἀλλὰ κατὰ βραχὺ μὲν ἐξ εὐρέος εἰς στενὸν ἀγομένης, κατὰ βραχὺ δ' ἐκ τοῦ στενοῦ πάλιν εὐρυνομένης. ὅπερ ἀκριβῶς ἐργάζεται τουτὶ τὸ σῶμα τὸ προκείμενον ἐν τῷ λόγῳ νῦν, ὃ δὴ γλωττίδα τε καὶ γλῶσσαν ὀνομάζω λάρυγγος.",
+                media: "video",
+                mediaUrl: "reference/glottis animation.mp4",
+                reference: "Gal. UP. 7. 13. 408-409. 18-7 Helmreich = 3. 561-562 Kühn"
+            },
+            {
+                id: "analysis_muscles",
+                title: "5. Muscles and Glottis",
+                content: "For the muscles confining the arytenoid cartilage forcibly holding out against the pushed pneuma, to that function the nature of the aforesaid glōttis significantly contributes. For the parts of the glōttis, both the left and the right [the vocal folds and vestibular folds], come to it, so that they fall together to each other and accurately shut the passage [rima glottidis].",
+                greek: "ἀντέχουσι γὰρ οὗτοι βιαίως ὠθουμένῳ τῷ πνεύματι τὸν ἀρυταινοειδῆ κλείοντες χόνδρον. εἰς ὅπερ ἔργον οὐ σμικρὰ συντελεῖ τῆς προειρημένης γλωττίδος ἡ φύσις. εἰς ταὐτὸν γὰρ αὐτῆς ἔρχεται τὰ μόρια, τό τ' ἐκ τῶν ἀριστερῶν καὶ τὸ τῶν δεξιῶν, ὡς συμπεσεῖν ἀλλήλοις ἀκριβῶς καὶ κλείεσθαι τὸν πόρον.",
+                media: "video",
+                mediaUrl: "reference/glottis animation.mp4",
+                reference: "Gal. UP. 7. 13. 409. 15-21 Helmreich = 3. 563 Kühn"
+            },
+            {
+                id: "analysis_cavities",
+                title: "6. Apertures and Cavities",
+                content: "And if some small unshut (passage) would be left, and especially in the animals where the whole larynx is wider, as such case was shown in the larger-voiced animals, that unguarded aperture is not disregarded by nature, placing under each part of the glōttis a considerable inner cavity in the aperture. whenever the air makes use of the broad ways as it enters and exits the body back and forth, none of it is pushed aside into the cavity: but since the passage is blocked and confined the air is thrusted vehemently toward the flanks and opens the small mouth of the glōttis, which until then was closed by the folding of the lips. For that very thing, that is of the folding, is the reason that aperture, discussed in this treatise, escaped the notice of all of the previous anatomists. Having the cavities in the tongue of the larynx filled with pneuma, air is poured off presumably in the necessary mass to that passage of the pneuma, and narrow it exactly, as if they opened it by little before. That skill of nature came into high accuracy regarding the tongue of the larynx in all its structure and in size and arrangement and in the apertures and cavities.",
+                greek: "εἰ δ' ἔτι σμικρὸν ἄκλειστον ὑπολειφθείη, καὶ μάλιστα ἐν οἷς ζώοις εὐρύτερός ἐστιν ὁ σύμπας λάρυγξ, (ἐδείχθη δὲ τοιοῦτος ἐν τοῖς μεγαλοφώνοις ὑπάρχων,) οὐδὲ τοῦτο ἀπρονόητον παρῶπται τῇ φύσει, τρῆμα καθ' ἑκάτερον μέρος τῆς γλωττίδος ἓν ἐργασαμένη, ὑποθείσῃ δὲ τῷ τρήματι κοιλίαν ἔνδον οὐ σμικράν. εἰς ἣν, ἐπειδὰν μὲν εὐρείαις ὁδοῖς ὁ ἀὴρ χρώμενος εἰσίῃ τε εἰς τὸ ζῶον καὶ ἐξίῃ αὖθις, οὐδὲν παρωθεῖται· φραχθείσης δὲ τῆς διεξόδου, στενοχωρούμενος ὠθεῖταί τε βιαίως πρὸς τὰ πλάγια καὶ τὸ τῆς γλωττίδος ἀνοίγνυσι στόμιον, ὃ τέως ἐκέκλειστο, τῶν χειλῶν ἐπεπτυγμένων. αὐτὸ γάρ τοι τοῦτο (τοῦτ' ἔστι τὸ τῆς ἐπιπτύξεως) αἴτιον τοῦ λαθεῖν ἅπαντας τοὺς ἔμπροσθεν ἀνατομικοὺς τὸ προκείμενον ἐν τῷ λόγῳ τρῆμα. πληρωθεισῶν δὲ πνεύματος τῶν ἐν τῇ γλώττῃ τοῦ λάρυγγος κοιλιῶν, ἀποχεῖσθαι μὲν δήπου τὸν ὄγκον ἀναγκαῖον εἰς αὐτὸν τοῦ πνεύματος τὸν πόρον, ἀκριβῶς δὲ στενοῦσθαι, κᾂν εἰς μικρόν τι πρόσθεν ἀνέῳκτο. αὕτη μὲν ἡ περὶ τὴν γλῶτταν τοῦ λάρυγγος τέχνη τῆς φύσεως ἔν τε τῷ σύμπαντι σχήματι καὶ τῷ μεγέθει καὶ τῇ θέσει καὶ τοῖς τρήμασι καὶ ταῖς κοιλίαις εἰς ἄκρον ἀκριβείας ἥκουσα.",
+                media: "video",
+                mediaUrl: "reference/glottis animation.mp4",
+                reference: "Gal. UP. 7. 13. 409-410. 21-16 Helmreich = 3. 563-564 Kühn"
+            },
+            {
+                id: "analysis_utility",
+                title: "7. Utility and Size",
+                content: "Well if you will have in mind it (the tongue of the larynx) having been made bigger, you will block the ways of the pneuma, as it is accustomed to block them in inflammations. And having been made smaller, it will be more deficient of the right size and the animal act entirely mute: having lost only a little of such part the animal act as small-voiced and bad-voiced, in such way that it [the tongue of the larynx] lacks its proper size. And so shall you alter its position, or the size of the aperture or the cavity, you will destroy the whole utility.",
+                greek: "μείζονα γοῦν αὐτὴν εἴπερ ἐπινοήσαις γεγενημένην, ἀποφράξεις τὰς ὁδοὺς τοῦ πνεύματος, ὡς κἀν ταῖς φλεγμοναῖς ἀποφράττειν εἴωθεν. ἐλάττων δ' αὖ γενηθεῖσα, πολὺ μὲν ἐνδέουσα τοῦ μετρίου παντάπασιν ἄφωνον ἐργάζεται τὸ ζῷον· ὀλίγῳ δ' ἀπολειφθεῖσα μέρει τοσούτῳ μικροφωνότερόν τε καὶ κακοφωνότερον, ὅσῳπερ ἂν αὐτὴ λείπηται τοῦ συμμέτρου. οὕτω δὲ κἂν τὴν θέσιν αὐτῆς μετακινή- σῃς, ἢ τὸ μέγεθος τοῦ τρήματος ἢ τῆς κοιλίας ἀναιρήσεις ‖ τὴν ὅλην χρείαν.",
+                media: "video",
+                mediaUrl: "reference/glottis animation.mp4",
+                reference: "Gal. UP. 7. 13. 410. 16-25 Helmreich = 3. 564-565 Kühn"
+            },
+            {
+                id: "analysis_whirlpool",
+                title: "8. The Whirlpool (Iliggos)",
+                content: "Indeed, immediately along each aperture, as said, there is a part that is elongated from above downwards, as some narrow line, and yet it is not really narrow: but the membranous substance of the lips is as it is falling into the underlying concavity, and through that it seems more as a wrinkle rather than aperture before the lips unfold. And when they unfold it (the wrinkle) is immediately clearly observed, and clearly the underlying cavity to it. And being each of the apertures from the left and the right as such, some pneuma flows beside them with no reason to open the little-mouth or the filled cavity. Whenever it is pushed vehemently from below, and restrained from above, inasmuch as no more force to go straightforward, as some whirlpool experience, spinning toward the flanks of the passage, falling into them vehemently and arousing easily the membranous growths of each of the passages to the underlying concavities, to those which they incline by nature, filling and blowing through the entire glōttis.",
+                greek: "αὐτίκα γέ τοι τὸ τρῆμα καθ' ἑκάτερον, ὡς εἴρηται, μέρος ὑπάρχει, πρόμηκες δ' ἐστὶν ἄνωθεν κάτω, καθάπερ τις γραμμὴ στενή, καίτοι γ' οὐκ ὂν στενόν, ἀλλὰ τὸ τῶν χειλῶν ὑμενῶδες οἷόνπερ καταπῖπτον ἐστὶν εἰς τὴν ὑποκειμένην κοιλότητα, καὶ διὰ τοῦτο καθάπερ ῥυσότης μᾶλλον ἢ τρῆμα φαίνεται πρὶν διαπτυχθῆναι τὰ χείλη. διαπτυχθέντων δὲ σαφῶς μὲν ἤδη καὶ τοῦτο, σαφῶς δὲ καὶ ἡ ὑποκειμένη κοιλότης αὐτῷ θεωρεῖται. τοιούτου δ' ὄντος ἑκατέρου τοῦ τρήματος ἐξ ἀριστερῶν τε καὶ δεξιῶν παραρρεῖ τι πνεῦμα μηδεμίαν αἰτίαν ἔχον δεξιῶν παραρρεῖ τι πνεῦμα μηδεμίαν αἰτίαν ἔχον ἀνοιγνύναι τὸ στόμιον ἢ πληροῦν τὴν κοιλίαν. ὅταν δ' ὠθῆται μὲν κάτωθεν βιαίως, ἴσχηται δ' ἄνωθεν, ἅτε μηκέτι δυνάμενον εὐθυπορεῖν, οἷον ἴλιγγόν τινα παθὸν ἐπιστρέφεταί τε πρὸς τὰ πλάγια τοῦ πόρου καὶ τούτοις ἐμπίπτει βιαίως ἀνατρέπει τε ῥᾳδίως τὰς ὑμενώδεις ἐπιφύσεις ἑκατέρου τῶν πόρων εἰς τὰς ὑποκειμένας κοιλότητας, εἰς ἅσπερ καὶ ῥέπουσι φύσει, πληροῖ τ' αὖ καὶ διαφυσᾷ ‖ σύμπασαν τὴν γλωττίδα.",
+                media: "video",
+                mediaUrl: "reference/glottis animation.mp4",
+                reference: "Gal. UP. 7. 13. 410-411. 25-17 Helmreich = 3. 565-566 Kühn"
+            },
+            {
+                id: "analysis_protection",
+                title: "9. Protection Against Breaking",
+                content: "Since that, it is followed by necessity that the passage is blocked precisely. And that body of the glōttis was made of a membranous material not to break from being filled with pneuma and not at the time when the whole larynx widens and not when it contracts, obeying the opposing conditions of it (of the larynx), ever reaching the danger of breaking.",
+                greek: "τούτῳ δ' ἐξ ἀνάγκης ἕπεται φράττεσθαι τὸν πόρον ἀκριβῶς. αὐτὸ δὲ τὸ σῶμα τῆς γλωττίδος ὑμενῶδες μὲν ἐγένετο πρὸς τὸ μήτε πληρούμενον ὑπὸ τοῦ πνεύματος ῥήγνσθαι μήτ' ἐν τῷ ποτὲ μὲν εὐρύνεσθαι, ποτὲ δὲ συστέλλεσθαι τὸν ὅλον λάρυγγα, ταῖς ἐναντίαις αὐτοῦ καταστάσεσιν ἑπόμενον, εἰς κίνδυνον ἀφικέσθαι ποτὲ ῥήξεως·",
+                media: "video",
+                mediaUrl: "reference/glottis animation.mp4",
+                reference: "Gal. UP. 7. 13. 411. 17-24 Helmreich = 3. 566 Kühn"
+            },
+            {
+                id: "analysis_moisture",
+                title: "10. The Necessity of Moisture",
+                content: "and it is not simply moist, but with sticky and fatty liquid, in order to moisten by all fitting moist and not, as in the tongues of the auloi, that dry up continuously, requiring some additional liquid, and that becomes in need of external remedies. For the delicate and watery liquid being quickly dismissed into vapours, disperse and flow off easily straightway and much whenever the passage is inclined: and the sticky and fatty liquid suffices for much time and it does not readily flow off and not dry out. Therefore, if nature devised all other things in the structure of the larynx admirably, neglecting only the liquid of such sort, our voice would be corrupted because of quick dryness of the glōttis as well as all of the laryngeal structures, as now it is used to be rarely when the administration of nature is conquered by violent circumstances. For in burning fevers people cannot utter without wetting the larynx, and similarly in those that walked through the violent heat.",
+                greek: "ὑγρὸν δ' οὐχ ἁπλῶς, ἀλλὰ σὺν τῷ γλίσχρον τέ πως εἶναι καὶ λιπαρόν, ἵν' ἐπιτέγγηται διὰ παντὸς οἰκείᾳ νοτίδι καὶ μή, καθάπερ αἱ τῶν αὐλῶν γλῶτται ξηραινόμεναι συνεχῶς ἐπικτήτου τινὸς ὑγρότητος δέονται, καὶ αὐτὸ τῶν ἔξωθεν ἰαμάτων ἐπιδεὲς γίγνηται. τὸ μὲν γὰρ λεπτὸν καὶ ὑδατῶδες ὑγρὸν εἰς ἀτμοὺς τὸ μὲν γὰρ λεπτὸν καὶ ὑδατῶδες ὑγρὸν εἰς ἀτμοὺς διαλυόμενον ἐν τάχει διαφορεῖται ῥᾳδίως ἀπορρεῖ τε παραχρῆμα καὶ μάλισθ' ὅταν ᾖ κατάντης ὁ πόρος· τὸ δὲ γλίσχρον ἅμα καὶ λιπαρὸν ἐξαρκεῖ χρόνῳ παμπόλλῳ μήτ' ἀπορρέον ἑτοίμως μήτε ξηραινόμενον. ὥστ', εἴπερ καὶ τἄλλα πάνθ' ἡ φύσις ἐν τῇ τοῦ λάρυγγος κατα- σκευῇ θαυμαστῶς ἐτεχνήσατο, μόνης δὲ τῆς τοιαύτης ὑγρότητος ἐπελάθετο, διεφθείρετ' ἂν ‖ ἡμῶν ἡ φωνὴ διὰ ταχέων ξηραινομένης τῆς γλωττίδος ἅμα τοῖς κατὰ τὸν λάρυγγα σύμπασιν, ὥσπερ νῦν εἴωθε γίγνεσθαι σπανιάκις ὑπὸ βιαίων αἰτίων νικωμένης τῆς φυσικῆς διοικήσεως. ἔν τε γὰρ τοῖς περικαέσι πυρετοῖς οὐ δύνανται φθέγγεσθαι πρὶν διαβρέξαι τὸν λάρυγγα, καὶ ὅσοι διὰ καύματος ὡδοιπόρησαν σφοδροῦ.",
+                media: "video",
+                mediaUrl: "reference/glottis animation.mp4",
+                reference: "Gal. UP. 7. 13. 411-412. 25-14 Helmreich = 3. 566 Kühn"
+            }
+        ];
+
+        const useAppStore = create((set) => ({
+            currentStepIndex: 0,
+            activeSection: 'intro', // 'intro' | 'larynx' | 'pneuma' | 'analysis'
+            activeTerm: null,
+            setStep: (index) => set({ currentStepIndex: index }),
+            setActiveSection: (section) => set({ activeSection: section, currentStepIndex: 0 }),
+            setActiveTerm: (term) => set({ activeTerm: term })
+        }));
+
+        // --- Pneuma Visualizer Component ---
+        const PneumaVisualizer = () => {
+            const { currentStepIndex } = useAppStore();
+            const step = SCRIPT_PNEUMA[currentStepIndex];
+            const stageMap = {
+                "pneuma_intro": 0,
+                "pneuma_brain": 1,
+                "pneuma_thorax": 2,
+                "pneuma_trachea": 3,
+                "pneuma_larynx": 4,
+                "pneuma_strike": 5,
+                "pneuma_voice": 6
+            };
+
+            const stage = step && stageMap[step.id] !== undefined ? stageMap[step.id] : -1;
+
+            // Memoize particles - MUST BE HOOK START
+            const particles = useMemo(() => Array.from({ length: 20 }).map((_, i) => ({
+                id: i,
+                r: Math.random() * 2 + 1,
+                dur: stage >= 5 ? (stage >= 6 ? (0.2 + Math.random() * 0.2) + 's' : '0.1s') : (stage >= 4 ? (0.8 + Math.random() * 0.4) + 's' : (2.5 + Math.random()) + 's'),
+                path: `M${205 + (Math.random() * 20 - 10)} 450 C ${205 + (Math.random() * 20 - 10)} 400, ${215 + (Math.random() * 10 - 5)} 300, 215 150`,
+                begin: i * 0.15,
+                kp: stage >= 5 ? "0;0.9;1" : "0;1",
+                kt: stage >= 5 ? "0;0.95;1" : "0;1"
+            })), [stage]);
+
+            if (stage === -1) return null;
+
+            return (
+                <div className="w-full h-full flex items-center justify-center bg-[#F0EAD6] relative overflow-hidden">
+                    <svg viewBox="0 0 400 600" className="w-full h-full max-w-lg opacity-90">
+                        {/* ... defs ... */}
+                        <defs>
+                            <filter id="ink-blur" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="0.5" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                            <marker id="arrow-head" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" fill="#2C3E50">
+                                <path d="M0,0 L6,3 L0,6 L1,3 z" />
+                            </marker>
+                        </defs>
+
+                        {/* ANATOMICAL SILHOUETTE (INK STYLE) */}
+                        <g stroke="#2C3E50" strokeWidth="1.5" fill="none" opacity="0.6" filter="url(#ink-blur)">
+                            {/* Head & Neck - More organic profile */}
+                            <path d="M150 100 
+                                      C 150 60, 180 30, 220 30 
+                                      C 260 30, 270 70, 270 100 
+                                      C 270 130, 260 140, 255 160 
+                                      L 255 200 
+                                      Q 320 210, 360 230" strokeLinecap="round" /> {/* Back of head/neck/shoulder */}
+                            <path d="M150 100 
+                                      Q 150 140, 160 150 
+                                      Q 175 160, 175 200 
+                                      Q 120 210, 80 230" strokeLinecap="round" /> {/* Jaw/neck/shoulder */}
+
+                            {/* Torso Outline */}
+                            <path d="M80 230 Q 70 300, 80 450 Q 85 550, 100 580" strokeDasharray="5,5" opacity="0.5" />
+                            <path d="M360 230 Q 370 300, 360 450 Q 355 550, 340 580" strokeDasharray="5,5" opacity="0.5" />
+                        </g>
+
+                        {/* ORGANS LAYER */}
+                        <g stroke="#2C3E50" fill="none">
+                            {/* Brain: Convoluted organic shape */}
+                            <g className={`transition-all duration-1000 ${stage >= 1 ? 'opacity-100' : 'opacity-10'}`}>
+                                <path d="M175 60 C 170 40, 200 35, 210 50 C 220 35, 250 40, 245 60 C 260 70, 250 90, 230 95 C 210 105, 190 95, 175 60 Z"
+                                    fill="#e8e4da" strokeWidth="1.5" />
+                                <path d="M185 60 Q 195 50, 205 65 Q 215 50, 235 60" strokeWidth="0.5" opacity="0.6" />
+                            </g>
+
+                            {/* Trachea: Tube with rings */}
+                            <g className={`transition-all duration-1000 ${stage >= 3 ? 'opacity-100' : 'opacity-20'}`}>
+                                <path d="M200 200 L 200 300" strokeWidth="1" />
+                                <path d="M230 200 L 230 300" strokeWidth="1" />
+                                {/* Cartilage Rings */}
+                                {[...Array(8)].map((_, i) => (
+                                    <path key={i} d={`M200 ${210 + i * 12} Q 215 ${215 + i * 12}, 230 ${210 + i * 12}`} opacity="0.4" />
+                                ))}
+                            </g>
+
+                            {/* Lungs: Two lobes */}
+                            <g className={`transition-all duration-1000 ${stage >= 2 ? 'opacity-100' : 'opacity-10'}`}>
+                                <path d="M200 300 Q 140 310, 130 400 Q 140 500, 200 480 Z" fill="#e8e4da" strokeWidth="1.5" />
+                                <path d="M230 300 Q 290 310, 300 400 Q 290 500, 230 480 Z" fill="#e8e4da" strokeWidth="1.5" />
+                                {/* Diaphragm Curve */}
+                                <path d="M130 480 Q 215 450, 300 480" strokeWidth="1" strokeDasharray="4 2" />
+                            </g>
+                        </g>
+
+                        {/* DYNAMIC ELEMENTS LAYER */}
+
+                        {/* STAGE 1: NERVES */}
+                        <g className={`transition-opacity duration-1000 ${stage >= 1 ? 'opacity-100' : 'opacity-0'}`}>
+                            <path d="M210 95 C 200 150, 190 200, 195 320" stroke="#C0392B" strokeWidth="1.5" fill="none" strokeDasharray="3 3">
+                                <animate attributeName="stroke-dashoffset" from="50" to="0" dur="2s" repeatCount="indefinite" />
+                            </path>
+                            <text x="250" y="80" className="font-serif text-xs fill-[#2C3E50] italic">Hēgemonikon</text>
+                        </g>
+
+                        {/* STAGE 2: MUSCLES & COMPRESSION */}
+                        <g className={`transition-opacity duration-1000 ${stage >= 2 ? 'opacity-100' : 'opacity-0'}`}>
+                            {/* Intercostals */}
+                            {[0, 1, 2].map(i => (
+                                <path key={i} d={`M110 ${350 + i * 30} L 130 ${360 + i * 30}`} stroke="#2C3E50" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+                            ))}
+                            {[0, 1, 2].map(i => (
+                                <path key={i} d={`M320 ${350 + i * 30} L 300 ${360 + i * 30}`} stroke="#2C3E50" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+                            ))}
+                            {/* Abdominals */}
+                            <path d="M180 500 L 180 550" stroke="#2C3E50" strokeWidth="1" />
+                            <path d="M250 500 L 250 550" stroke="#2C3E50" strokeWidth="1" />
+                            <path d="M180 525 L 250 525" stroke="#2C3E50" strokeWidth="1" />
+
+                            {/* Force Arrows */}
+                            <path d="M90 400 L 120 400" stroke="#8b0000" strokeWidth="2" markerEnd="url(#arrow-head)">
+                                <animate attributeName="d" values="M90 400 L 120 400; M85 400 L 115 400; M90 400 L 120 400" dur="2s" repeatCount="indefinite" />
+                            </path>
+                            <path d="M340 400 L 310 400" stroke="#8b0000" strokeWidth="2" markerEnd="url(#arrow-head)">
+                                <animate attributeName="d" values="M340 400 L 310 400; M345 400 L 315 400; M340 400 L 310 400" dur="2s" repeatCount="indefinite" />
+                            </path>
+                            <path d="M215 560 L 215 500" stroke="#8b0000" strokeWidth="2" markerEnd="url(#arrow-head)">
+                                <animate attributeName="d" values="M215 560 L 215 500; M215 565 L 215 505; M215 560 L 215 500" dur="2s" repeatCount="indefinite" />
+                            </path>
+                        </g>
+
+                        {/* STAGE 3: PNEUMA PARTICLES */}
+                        <g className={`transition-opacity duration-1000 ${stage >= 3 ? 'opacity-100' : 'opacity-0'}`}>
+                            {particles.map((p, i) => (
+                                <circle key={i} r={p.r} fill="#C0392B" opacity="0.8">
+                                    <animateMotion
+                                        dur={p.dur}
+                                        repeatCount="indefinite"
+                                        path={p.path}
+                                        begin={`${p.begin}s`}
+                                        keyPoints={p.kp}
+                                        keyTimes={p.kt}
+                                        calcMode="linear"
+                                    />
+                                </circle>
+                            ))}
+                        </g>
+
+                        {/* STAGE 4: GLOTTIS CONSTRICTION */}
+                        <g className={`transition-opacity duration-1000 ${stage >= 4 ? 'opacity-100' : 'opacity-0'}`}>
+                            {/* Simplified Glottis Valve in Neck */}
+                            <ellipse cx="215" cy="180" rx="15" ry="5" fill="#fff" stroke="#2C3E50" strokeWidth="2" />
+                            <path d="M205 180 L 225 180" stroke="#2C3E50" strokeWidth={stage === 5 ? "3" : "2"}>
+                                {stage === 5 && (
+                                    <animate attributeName="d" values="M200 180 L 230 180; M215 180 L 215 180; M200 180 L 230 180" dur="0.2s" repeatCount="indefinite" />
+                                )}
+                                {stage !== 5 && (
+                                    <animate attributeName="d" values="M200 180 L 230 180; M212 180 L 218 180; M200 180 L 230 180" dur="1s" repeatCount="indefinite" />
+                                )}
+                            </path>
+                            {/* STAGE 5: THE STRIKE IMPACT VISUAL */}
+                            {stage === 5 && (
+                                <g>
+                                    <circle cx="215" cy="180" r="10" stroke="#C0392B" strokeWidth="2" fill="none" opacity="0">
+                                        <animate attributeName="r" values="2;20" dur="0.4s" repeatCount="indefinite" />
+                                        <animate attributeName="opacity" values="1;0" dur="0.4s" repeatCount="indefinite" />
+                                    </circle>
+                                    <circle cx="215" cy="180" r="5" stroke="#C0392B" strokeWidth="1" fill="none" opacity="0">
+                                        <animate attributeName="r" values="1;15" dur="0.4s" begin="0.1s" repeatCount="indefinite" />
+                                        <animate attributeName="opacity" values="1;0" dur="0.4s" begin="0.1s" repeatCount="indefinite" />
+                                    </circle>
+                                </g>
+                            )}
+                            <text x="240" y="180" className="font-serif text-xs fill-[#2C3E50] italic">Stenōsis</text>
+                        </g>
+
+                        {/* STAGE 6: VOICE EMISSION */}
+                        <g className={`transition-opacity duration-1000 ${stage >= 6 ? 'opacity-100' : 'opacity-0'}`}>
+                            <path d="M215 160 Q 250 140, 280 160" fill="none" stroke="#C0392B" strokeWidth="2" opacity="0.6">
+                                <animate attributeName="d" values="M215 160 Q 250 140, 280 160; M215 160 Q 300 100, 350 160" dur="1.5s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
+                            </path>
+                            <path d="M215 160 Q 180 140, 150 160" fill="none" stroke="#C0392B" strokeWidth="2" opacity="0.6">
+                                <animate attributeName="d" values="M215 160 Q 180 140, 150 160; M215 160 Q 130 100, 80 160" dur="1.5s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
+                            </path>
+                            <text x="195" y="130" className="font-serif font-bold fill-[#8b0000] text-2xl tracking-widest">PHŌNĒ</text>
+                        </g>
+                    </svg>
+                </div>
+            );
+        };
+
+        // --- NAVIGATION COMPONENT ---
+        const Navigation = () => {
+            const { activeSection, setActiveSection } = useAppStore();
+            return (
+                <nav className="bg-white border-r border-ink/10 flex flex-col items-center py-8 gap-8 w-16 md:w-20 shrink-0 z-50 shadow-lg">
+                    <div className="w-8 h-8 rounded-full bg-galen-red/10 text-galen-red flex items-center justify-center font-serif font-bold text-xl mb-4">
+                        G
+                    </div>
+                    <button
+                        onClick={() => setActiveSection('intro')}
+                        className={`p-3 rounded-xl transition-all duration-300 relative group ${activeSection === 'intro' ? 'bg-galen-red text-white shadow-md' : 'text-black/40 hover:bg-black/5 hover:text-galen-red'}`}
+                        title="Home"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection('larynx')}
+                        className={`p-3 rounded-xl transition-all duration-300 relative group ${activeSection === 'larynx' ? 'bg-galen-red text-white shadow-md' : 'text-black/40 hover:bg-black/5 hover:text-galen-red'}`}
+                        title="Anatomy"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection('pneuma')}
+                        className={`p-3 rounded-xl transition-all duration-300 relative group ${activeSection === 'pneuma' ? 'bg-galen-red text-white shadow-md' : 'text-black/40 hover:bg-black/5 hover:text-galen-red'}`}
+                        title="Physiology"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection('analysis')}
+                        className={`p-3 rounded-xl transition-all duration-300 relative group ${activeSection === 'analysis' ? 'bg-galen-red text-white shadow-md' : 'text-black/40 hover:bg-black/5 hover:text-galen-red'}`}
+                        title="Textual Analysis"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    </button>
+                </nav>
+            )
+        }
+
+        // --- COMPONENTS ---
+
+        const UrlSync = () => {
+            const { activeSection, currentStepIndex, setActiveSection, setStep } = useAppStore();
+
+            // 1. Sync State -> URL
+            useEffect(() => {
+                const url = new URL(window.location);
+                url.searchParams.set('section', activeSection);
+                if (activeSection !== 'intro') {
+                    url.searchParams.set('step', currentStepIndex);
+                } else {
+                    url.searchParams.delete('step');
+                }
+                window.history.pushState({}, '', url);
+            }, [activeSection, currentStepIndex]);
+
+            // 2. Sync URL -> State (Initial Load only)
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const section = params.get('section');
+                const step = parseInt(params.get('step'), 10);
+
+                if (section && ['intro', 'larynx', 'pneuma', 'analysis'].includes(section)) {
+                    setActiveSection(section);
+                    if (!isNaN(step) && step >= 0) {
+                        // Small timeout to ensure script arrays are ready if fetched async (not needed here but good practice)
+                        setTimeout(() => setStep(step), 0);
+                    }
+                }
+            }, [setActiveSection, setStep]);
+
+            return null;
+        };
+
+        const MediaViewer = () => {
+            const { currentStepIndex, activeSection } = useAppStore();
+            const videoRef = useRef(null);
+
+            // Determine Script safely
+            let SCRIPT;
+            if (activeSection === 'pneuma') SCRIPT = SCRIPT_PNEUMA;
+            else if (activeSection === 'analysis') SCRIPT = SCRIPT_ANALYSIS;
+            else if (activeSection === 'larynx') SCRIPT = SCRIPT_LARYNX;
+
+            // For 'intro', SCRIPT is undefined, so we define a safe default step
+            const step = (SCRIPT && SCRIPT[currentStepIndex]) ? SCRIPT[currentStepIndex] : (SCRIPT ? SCRIPT[0] : { media: 'none' });
+
+            // Handle video playback - ALWAYS CALL HOOKS BEFORE CONDITIONAL RETURNS
+            useEffect(() => {
+                if (step.media === 'video' && videoRef.current) {
+                    const vid = videoRef.current;
+                    vid.currentTime = step.timeRange ? step.timeRange[0] : 0;
+                    vid.play().catch(e => console.log("Autoplay blocked, waiting for interaction"));
+
+                    let rafId;
+                    const checkTime = () => {
+                        if (step.timeRange && vid.currentTime >= step.timeRange[1]) {
+                            vid.currentTime = step.timeRange[0];
+                        }
+                        rafId = requestAnimationFrame(checkTime);
+                    };
+                    rafId = requestAnimationFrame(checkTime);
+
+                    return () => {
+                        if (rafId) cancelAnimationFrame(rafId);
+                    };
+                }
+            }, [currentStepIndex, step]);
+
+            // Intro Mode (Hero Image)
+            if (activeSection === 'intro') {
+                return (
+                    <div className="w-full h-full flex items-center justify-center bg-parchment relative overflow-hidden">
+                        <img
+                            src="reference/main_page_photo.png"
+                            alt="Galen's Glottis"
+                            className="max-w-[70%] max-h-[70%] object-contain drop-shadow-xl saturate-50 opacity-90 transition-all duration-1000 hover:scale-105 hover:opacity-100"
+                        />
+                        <div className="absolute bottom-10 text-center font-serif text-galen-red/60 text-sm italic">
+                            3D reconstruction of the Galenic phonatory system, ATLOMY project
+                        </div>
+                    </div>
+                );
+            }
+
+            // Check if this step uses the Pneuma Visualizer
+            if (step.media === 'schematic') {
+                return <PneumaVisualizer />;
+            }
+
+            return (
+                <div className="w-full h-full flex items-center justify-center bg-black/5 overflow-hidden relative">
+                    {step.media === 'image' && (
+                        <div className="w-full h-full flex items-center justify-center bg-black">
+                            <img
+                                src={step.mediaUrl}
+                                alt="Visual Reference"
+                                className="max-w-full max-h-full object-contain"
+                            />
+                        </div>
+                    )}
+                    {step.media === 'video' && (
+                        <video
+                            ref={videoRef}
+                            src={step.mediaUrl}
+                            muted
+                            playsInline
+                            loop={true}
+                            autoPlay
+                            controls
+                            className="w-full h-full object-contain bg-black"
+                        />
+                    )}
+                    <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 text-sm rounded backdrop-blur max-w-[80%]">
+                        Visual Reference: {step.media === 'video' ? 'Atlomy Project Animation' : (step.media === 'image' ? 'Anatomical Illustration' : 'Schematic Visualisation')}
+                    </div>
+                </div>
+            );
+        };
+
+        const TermLink = ({ termKey, children }) => {
+            const { setActiveTerm } = useAppStore();
+            const entry = GLOSSARY[termKey];
+
+            // Render as trigger button
+            if (entry) {
+                return (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevent step click
+                            setActiveTerm(termKey);
+                        }}
+                        className="text-[#C0392B] bg-transparent border-0 border-b border-[#C0392B] hover:bg-[#C0392B] hover:text-[#f4f1ea] transition-colors cursor-pointer font-bold inline-block leading-tight"
+                    >
+                        {children}
+                    </button>
+                );
+            }
+
+            // Fallback
+            return <span className="text-[#C0392B] font-semibold">{children}</span>;
+        };
+
+        const GlossaryCard = () => {
+            const { activeTerm, setActiveTerm } = useAppStore();
+            const entry = activeTerm ? GLOSSARY[activeTerm] : null;
+
+            if (!entry) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                    onClick={() => setActiveTerm(null)}>
+                    <div
+                        className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full relative transform transition-all animate-in fade-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            className="absolute top-4 right-4 text-black/30 hover:text-black transition-colors"
+                            onClick={() => setActiveTerm(null)}
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+
+                        <h3 className="text-2xl font-serif font-bold text-galen-red mb-1">{entry.term}</h3>
+                        <p className="text-xs font-sans uppercase tracking-wider text-black/40 mb-4">Glossary Entry</p>
+
+                        <p className="font-serif text-lg leading-relaxed text-slate-700 mb-6">
+                            {entry.def}
+                        </p>
+
+                        {entry.url && (
+                            <a
+                                href={entry.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-sm font-bold text-[#C0392B] hover:underline"
+                            >
+                                Read full entry on ATLOMY &rarr;
+                            </a>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const NarrativePanel = () => {
+            const { currentStepIndex, setStep, activeSection, setActiveSection } = useAppStore();
+            const stepRefs = useRef([]);
+
+            // Scroll active step into view
+            useEffect(() => {
+                const activeEl = stepRefs.current[currentStepIndex];
+                if (activeEl) {
+                    activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, [currentStepIndex, activeSection]);
+
+            // Keyboard Navigation
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    let SCRIPT;
+                    if (activeSection === 'pneuma') SCRIPT = SCRIPT_PNEUMA;
+                    else if (activeSection === 'analysis') SCRIPT = SCRIPT_ANALYSIS;
+                    else SCRIPT = SCRIPT_LARYNX;
+
+                    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                        if (currentStepIndex < SCRIPT.length - 1) setStep(currentStepIndex + 1);
+                    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                        if (currentStepIndex > 0) setStep(currentStepIndex - 1);
+                    }
+                };
+
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [currentStepIndex, activeSection, setStep]);
+
+            if (activeSection === 'intro') {
+                return (
+                    <div className="p-8 h-full flex flex-col overflow-y-auto no-scrollbar relative z-10">
+                        <div className="pt-10 flex flex-col gap-6">
+                            <div>
+                                <h1 className="text-4xl font-serif font-bold mb-2 text-galen-red">Galen's Phonatory System</h1>
+                                <p className="italic text-black/60 text-lg">An Interactive Scholarly Edition</p>
+                            </div>
+
+                            <p className="text-xl leading-relaxed font-serif text-justify border-b border-black/10 pb-6">
+                                Galen of Pergamon conceptualised voice production not as a function of isolated parts, but as the work of a fixed group of parts, designed by Nature, acting together to achieve voice.
+                                In his teleological view, the body is the work of a divine Craftsman, where every structure serves a precise purpose.
+                                This digital edition explores Galen's anatomical discoveries and physiological theories, from the cartilaginous framework of the larynx to the production of pneuma.
+                                <br /><br />
+                                <a href="https://www.atlomy.com/model/Galen_-_Phonatory_System/222" target="_blank" rel="noopener noreferrer" className="inline-block mt-2 px-6 py-3 bg-galen-red text-white font-bold rounded-lg shadow-md hover:bg-[#8b0000] hover:shadow-lg transition-all duration-300 no-underline text-sm uppercase tracking-wide">
+                                    View 3D Model on ATLOMY
+                                </a>
+                            </p>
+
+                            <div className="flex flex-col gap-6">
+                                <div className="group cursor-pointer hover:bg-black/5 p-4 -mx-4 rounded-xl transition-colors" onClick={() => setActiveSection('larynx')}>
+                                    <h3 className="text-xl font-bold text-galen-red mb-2 flex items-center gap-2">
+                                        <span className="w-6 h-6 rounded-full border border-galen-red flex items-center justify-center text-sm">1</span>
+                                        Anatomy of the Larynx
+                                    </h3>
+                                    <p className="text-black/70 font-serif">Explore the "First Instrument of Voice". Detailed 3D reconstruction of the cartilages and muscles that frame the phonatory act.</p>
+                                </div>
+
+                                <div className="group cursor-pointer hover:bg-black/5 p-4 -mx-4 rounded-xl transition-colors" onClick={() => setActiveSection('pneuma')}>
+                                    <h3 className="text-xl font-bold text-galen-red mb-2 flex items-center gap-2">
+                                        <span className="w-6 h-6 rounded-full border border-galen-red flex items-center justify-center text-sm">2</span>
+                                        Pneuma & Voice
+                                    </h3>
+                                    <p className="text-black/70 font-serif">Visualise the physiological transformation of breath into voice.
+                                        <span className="block mt-1 text-xs font-sans text-galen-red/80 uppercase tracking-wider font-bold">Note: This section is currently experimental.</span>
+                                    </p>
+                                </div>
+
+                                <div className="group cursor-pointer hover:bg-black/5 p-4 -mx-4 rounded-xl transition-colors" onClick={() => setActiveSection('analysis')}>
+                                    <h3 className="text-xl font-bold text-galen-red mb-2 flex items-center gap-2">
+                                        <span className="w-6 h-6 rounded-full border border-galen-red flex items-center justify-center text-sm">3</span>
+                                        Interactive Textual Analysis
+                                    </h3>
+                                    <p className="text-black/70 font-serif">Read Galen's original Greek text on the Glottis alongside English translation and visual commentary.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-auto pt-12 text-center text-black/40 text-sm font-sans">
+                            Based on the thesis by Gideon Manelis <br /> Advisor: Prof. Orly Lewis
+                        </div>
+                    </div>
+                );
+            }
+
+            let SCRIPT;
+            if (activeSection === 'pneuma') SCRIPT = SCRIPT_PNEUMA;
+            else if (activeSection === 'analysis') SCRIPT = SCRIPT_ANALYSIS;
+            else SCRIPT = SCRIPT_LARYNX;
+
+            const renderContent = (content) => {
+                const parts = content.split(/(<[^>]+>[^<]+<\/[^>]+>)/g);
+                return parts.map((part, i) => {
+                    const match = part.match(/<([^>]+)>([^<]+)<\/[^>]+>/);
+                    if (match) {
+                        const [_, termKey, text] = match;
+                        if (GLOSSARY[termKey]) {
+                            return <TermLink key={i} termKey={termKey}>{text}</TermLink>;
+                        }
+                        // Fallback: If no glossary entry exists, render just the text clean
+                        return <span key={i}>{text}</span>;
+                    }
+                    return part;
+                });
+            };
+
+            return (
+                <div className="flex flex-col h-full relative">
+                    <div className="flex-1 p-8 overflow-y-auto no-scrollbar pb-24">
+                        <div className="pt-10">
+                            <h1 className="text-4xl font-serif font-bold mb-4 text-galen-red">Galen's Phonatory System</h1>
+                            <p className="italic text-black/60">An Interactive Scholarly Edition</p>
+                        </div>
+
+                        {SCRIPT.map((step, index) => (
+                            <div
+                                key={step.id}
+                                ref={el => stepRefs.current[index] = el}
+                                className={`flex flex-col shrink-0 transition-all duration-500 cursor-pointer ${activeSection === 'analysis'
+                                    ? 'min-h-0 py-16 justify-start'
+                                    : 'min-h-[60vh] justify-center'
+                                    } ${index === currentStepIndex
+                                        ? 'opacity-100 pl-4 border-l-4 border-galen-red'
+                                        : 'opacity-30 border-l-4 border-transparent hover:opacity-60'
+                                    }`}
+                                onClick={() => setStep(index)}
+                            >
+                                <h2 className="text-2xl font-bold mb-4 font-serif text-galen-red">{step.title}</h2>
+
+                                {/* Special rendering for Analysis section */}
+                                {activeSection === 'analysis' && step.greek && (
+                                    <div className="mb-6 p-4 bg-parchment/50 border border-ink/10 rounded italic font-serif text-lg leading-relaxed text-black/80">
+                                        "{step.greek}"
+                                    </div>
+                                )}
+
+                                <p className="text-xl leading-relaxed font-serif text-justify">
+                                    {renderContent(step.content)}
+                                </p>
+
+                                {step.reference && (
+                                    <div className="mt-4 pt-4 border-t border-black/10 text-xs font-serif text-black/50 italic text-right">
+                                        {step.reference}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        <div className="h-[40vh] flex items-center justify-center text-black/30 italic">
+                            End of Sequence
+                        </div>
+                    </div>
+
+                    {/* Fixed Navigation Controls */}
+                    <div className="absolute bottom-0 left-0 w-full bg-white/90 backdrop-blur border-t border-black/10 p-4 flex items-center justify-between z-20">
+                        <button
+                            disabled={currentStepIndex === 0}
+                            onClick={() => setStep(Math.max(0, currentStepIndex - 1))}
+                            className="px-4 py-2 rounded border border-black/20 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed font-serif flex items-center gap-2"
+                        >
+                            <span>←</span> Previous
+                        </button>
+
+                        <div className="text-sm font-sans text-black/50">
+                            Step {currentStepIndex + 1} of {SCRIPT.length}
+                        </div>
+
+                        <button
+                            disabled={currentStepIndex === SCRIPT.length - 1}
+                            onClick={() => setStep(Math.min(SCRIPT.length - 1, currentStepIndex + 1))}
+                            className="px-4 py-2 rounded bg-galen-red text-white hover:bg-[#8b0000] disabled:opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed font-serif flex items-center gap-2 shadow-sm transition-all"
+                        >
+                            Next <span>→</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return (
+                <div className="flex flex-col md:flex-row h-screen w-full font-serif overflow-hidden">
+                    <UrlSync />
+                    <GlossaryCard />
+                    <Navigation />
+                    <div className="w-full md:w-3/5 h-[40vh] md:h-full bg-parchment relative shadow-inner order-1 md:order-2">
+                        <MediaViewer />
+                    </div>
+                    <div className="w-full md:w-2/5 h-[60vh] md:h-full bg-white z-10 shadow-2xl relative order-2 md:order-1">
+                        <NarrativePanel />
+                    </div>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
