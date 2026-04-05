@@ -149,7 +149,7 @@ export const SCRIPT_LARYNX: Step[] = [
     },
     {
         id: "glottis_def",
-        title: "4. The Glottis (Ti Sōma)",
+        title: "4. The Glottis (τι σῶμα)",
         content: "\"In its inner cavity... is fixed <Glottis>a certain body</Glottis>... that resembles neither in substance nor in structure to any of the other body parts... which indeed I name glōttis and the tongue of the larynx.\"",
         media: "image",
         mediaUrl: "reference/glottis_illustration(1).png"

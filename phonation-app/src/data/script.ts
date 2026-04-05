@@ -3,7 +3,7 @@ import { NarrativeStep } from '../types';
 export const SCRIPT: NarrativeStep[] = [
     {
         id: "intro",
-        title: "Peri Phōnēs: The Instrument",
+        title: "Περὶ Φωνῆς: The Instrument",
         content: `
 # The Galenic Phonatory System
 
