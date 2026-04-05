@@ -26,19 +26,14 @@
         }
     </script>
 
-    <!-- Import Map with Deduped Dependencies -->
+    <!-- Import Map -->
     <script type="importmap">
         {
             "imports": {
                 "react": "https://esm.sh/react@18.2.0",
                 "react-dom": "https://esm.sh/react-dom@18.2.0",
                 "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-                "three": "https://esm.sh/three@0.160.0",
-                "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.16?external=react,react-dom,three",
-                "@react-three/drei": "https://esm.sh/@react-three/drei@9.102.0?external=react,react-dom,three,@react-three/fiber",
-                "zustand": "https://esm.sh/zustand@4.5.2?external=react",
-                "clsx": "https://esm.sh/clsx@2.1.0",
-                "framer-motion": "https://esm.sh/framer-motion@10.16.16?external=react,react-dom"
+                "zustand": "https://esm.sh/zustand@4.5.2?external=react"
             }
         }
     </script>
@@ -47,30 +42,48 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
+        :root {
+            --parchment: #f4ecc2;
+            --ink: #2a2a2a;
+            --galen-red: #8b0000;
+            --surface: #ffffff;
+            --surface-dim: #f9f7f0;
+            --border: rgba(42,42,42,0.1);
+            --text-muted: rgba(42,42,42,0.5);
+            --text-dim: rgba(42,42,42,0.4);
+            --text-base: #2a2a2a;
+            --nav-bg: #ffffff;
+            --panel-bg: #ffffff;
+        }
+        body.dark {
+            --parchment: #1a1610;
+            --ink: #e8dfc8;
+            --surface: #1e1b14;
+            --surface-dim: #252018;
+            --border: rgba(232,223,200,0.12);
+            --text-muted: rgba(232,223,200,0.5);
+            --text-dim: rgba(232,223,200,0.35);
+            --text-base: #e8dfc8;
+            --nav-bg: #161310;
+            --panel-bg: #1e1b14;
+        }
+
         body {
             margin: 0;
-            background-color: #f4ecc2;
-            color: #2a2a2a;
+            background-color: var(--parchment);
+            color: var(--text-base);
             overflow: hidden;
         }
 
         /* Hide scrollbar for narrative panel */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         #error-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(139, 0, 0, 0.9);
             color: white;
             padding: 2rem;
@@ -78,6 +91,38 @@
             font-family: monospace;
             white-space: pre-wrap;
         }
+
+        /* ---- Dark mode Tailwind overrides ---- */
+        body.dark .bg-white { background-color: var(--panel-bg) !important; }
+        body.dark .bg-white\/90 { background-color: rgba(30,27,20,0.92) !important; }
+        body.dark .text-black\/40 { color: var(--text-dim) !important; }
+        body.dark .text-black\/50 { color: var(--text-muted) !important; }
+        body.dark .text-black\/30 { color: var(--text-dim) !important; }
+        body.dark .text-black\/60 { color: var(--text-muted) !important; }
+        body.dark .text-black\/70 { color: rgba(232,223,200,0.7) !important; }
+        body.dark .text-black\/80 { color: rgba(232,223,200,0.8) !important; }
+        body.dark .border-black\/10 { border-color: var(--border) !important; }
+        body.dark .border-black\/20 { border-color: rgba(232,223,200,0.2) !important; }
+        body.dark .bg-black\/5 { background-color: rgba(255,255,255,0.05) !important; }
+        body.dark .hover\:bg-black\/5:hover { background-color: rgba(255,255,255,0.05) !important; }
+        body.dark .bg-parchment { background-color: var(--parchment) !important; }
+        body.dark .bg-parchment\/50 { background-color: rgba(26,22,16,0.6) !important; }
+        body.dark .text-slate-700 { color: #c4baa8 !important; }
+        body.dark .bg-black\/50 { background-color: rgba(0,0,0,0.7) !important; }
+        body.dark .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6) !important; }
+        body.dark input { background-color: var(--surface-dim) !important; color: var(--text-base) !important; border-color: var(--border) !important; }
+        body.dark textarea { background-color: var(--surface-dim) !important; color: var(--text-base) !important; border-color: var(--border) !important; }
+        body.dark .bg-gray-100 { background-color: var(--surface-dim) !important; }
+        body.dark .text-gray-700 { color: rgba(232,223,200,0.8) !important; }
+        body.dark .border-r { border-color: var(--border) !important; }
+
+        /* Print styles */
+        @media print {
+            body { overflow: visible !important; background: #fff !important; color: #000 !important; }
+            #print-target { display: block !important; font-family: Georgia, serif; padding: 2cm; max-width: 800px; margin: 0 auto; }
+            .no-print { display: none !important; }
+        }
+        #print-target { display: none; }
     </style>
 </head>
 
@@ -90,26 +135,28 @@
         window.addEventListener('load', function () {
             const scriptContent = document.getElementById('app-source').textContent;
             try {
-                // Manually transform JSX to JS, preserving ES imports/exports
                 const output = Babel.transform(scriptContent, {
                     presets: ['react'],
                     filename: 'app.tsx',
-                    // explicit targets to avoid the "esmodules must be boolean" error from auto-config
                     targets: { esmodules: true }
                 }).code;
 
-                // Create a blob and load it as a module
                 const blob = new Blob([output], { type: 'application/javascript' });
                 const url = URL.createObjectURL(blob);
                 const script = document.createElement('script');
                 script.type = 'module';
                 script.src = url;
+
+                script.onerror = function(e) {
+                    document.body.innerHTML = '<div style="color:red;font-family:monospace;padding:20px;"><h2>Module Load Error</h2><p>Check browser console (Cmd+Opt+J) for details.</p></div>';
+                };
+
                 document.body.appendChild(script);
-                console.log("Manual Babel bootstrap successful.");
+                console.log('Babel bootstrap successful.');
             } catch (e) {
-                console.error("Babel bootstrap failed:", e);
-                // Fallback basic error display
-                document.body.innerHTML = '<h1 style="color:red; padding:20px;">Babel Bootstrap Error: ' + e.message + '</h1><pre style="padding:20px;">' + e.stack + '</pre>';
+                console.error('Babel bootstrap failed:', e);
+                const errLine = e.loc ? ' (line ' + e.loc.line + ', col ' + e.loc.column + ')' : '';
+                document.body.innerHTML = '<div style="font-family:monospace;padding:20px;"><h2 style="color:red">Babel Error' + errLine + '</h2><pre style="background:#fef;padding:1em;border-radius:4px;overflow:auto">' + e.message + '</pre><p>Open browser console (Cmd+Opt+J) for full trace.</p></div>';
             }
         });
     </script>
@@ -117,11 +164,7 @@
     <script id="app-source" type="text/plain">
         import React, { useRef, useMemo, useEffect, useState } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { Canvas, useFrame } from '@react-three/fiber';
-        import { OrbitControls, Environment, ContactShadows, Html } from '@react-three/drei';
-        import * as THREE from 'three';
         import { create } from 'zustand';
-        import clsx from 'clsx';
 
         // --- DATA & GLOSSARY ---
 
@@ -297,7 +340,7 @@
                 content: "The muscles and the cartilages of the larynx were indeed described: it shall be spoken now about the other parts in what follows. In its (the larynx's) inner cavity, through which pneuma passes in and out, is fixed a certain body, on which I shortly spoke before, that resembles neither in substance nor in structure to any of the other body parts in all of the body. I have also spoken about it in my treatise On The Voice, showing that it is the first and the most proper organ of the voice, and it will be said now, as much as is necessary for the present affairs.",
                 greek: "Περὶ μὲν δὴ τῶν μυῶν τε καὶ τῶν χόνδρων τοῦ λάρυγγος εἴρηται· περὶ δὲ τῶν ἄλλων ἐφεξῆς λεγέσθω. κατὰ τὴν ἔνδον χώραν αὐτοῦ, δι' ἧς εἴσω τε καὶ ἔξω τὸ πνεῦμα φέρεται, τέτακταί τι σῶμα, περὶ οὗ μικρὸν ἔμπροσθεν εἶπον, οὔτε τὴν οὐσίαν, οὔτε τὸ σχῆμα παραπλήσιον ἑτέρῳ τινὶ τῶν καθ' ὅλον τὸ ζῶον. ὑπὲρ οὗ λέλεκται μέν μοι κᾀν τοῖς περὶ φωνῆς, ἐπιδεικνύντι τὸ πρῶτόν τε καὶ κυριώτατον ὑπάρχειν αὐτὸ τῆς φωνῆς ὄργανον· εἰρήσεται δὲ καὶ νῦν, ὅσον εἰς τὰ παρόντα ἐστὶ χρήσιμον",
                 media: "image",
-                mediaUrl: "reference/glottis_illustration(1).png",
+                mediaUrl: "./reference/glottis_illustration(1).png",
                 reference: "Gal. UP.7.13, 407,19 - 26 Helmreich = 3.560 - 561 Kühn"
             },
             {
@@ -306,7 +349,7 @@
                 content: "It resembles the mouthpiece (glōttis) of an aulos (ἀυλός), especially when it is viewed from below or above. I mean below, where the (rough) artery and the larynx meet [Cricotracheal ligament]: I mean above, through the orifice that is formed by the borders of the arytenoid and thyroid cartilages. It would be better not to liken that body to the mouthpieces of auloi, but rather to liken the mouthpieces to that body.",
                 greek: "ἔοικε μὲν οὖν αὐλοῦ γλώττῃ, μάλιστα κάτωθέν τε καὶ ἄνωθεν αὐτὸ θεωμένῳ. λέγω δὲ κάτωθεν μὲν, ἵνα συνάπτουσιν ἀλλήλοις ἥ τ' ἀρτηρία καὶ ὁ λάρυγξ· ἄνωθεν δὲ, κατὰ τὸ στόμα τὸ γεννώμενον ὑπὸ τῶν ταύτῃ περάτων τοῦ τε ἀρυταινοειδοῦς χόνδρου καὶ τοῦ θυρεοειδοῦς. ἄμεινον δ' ἦν ἄρα μὴ τοῦτο τὸ σῶμα ταῖς τῶν αὐλῶν γλώτταις εἰκάζειν, ἀλλ' ἐκείνας τῷδε.",
                 media: "image",
-                mediaUrl: "reference/glottis_illustration(1).png",
+                mediaUrl: "./reference/glottis_illustration(1).png",
                 reference: "Gal. UP. 7. 13. 407-8. 26-18 Helmreich = 3. 561 Kühn"
             },
             {
@@ -315,7 +358,7 @@
                 content: "For I think nature is prior in time and wiser in actions than the 'craft'. Therefore, this body (glōttis) is a deed of nature, and that which in the aulos is an invention of skill, that (the invention) would be an imitation of it (the body), invented by a wise man who is able to understand and imitate the deeds of nature. Well, the aulos is useless without its mouthpiece; the evidence proves that. There is no need to yearn to hear the reason in this work, for it was said in the treatise On the Voice, where it was straightforwardly demonstrated that it is not possible to generate a voice without the narrowing of the passage.",
                 greek: "καὶ γὰρ καὶ πρότερον, οἶμαι, τῷ χρόνῳ καὶ σοφώτερον τοῖς ἔργοις ἡ φύσις τῆς τέχνης ἐστίν. ὥστ', εἴπερ τουτὶ μὲν τὸ σῶμα φύσεως ἔργον ὑπάρχει, τέχνης δ'εὕρημά ἐστι τὸ κατὰ τοὺς αὐλοὺς, ἐκεῖνο τούτου μίμημα ἂν εἴη, πρὸς ἀνδρὸς εὑρημένον σοφοῦ, γνωρίζειν τε καὶ μιμεῖσθαι τὰ τῆς φύσεως ἔργα δυναμένου. ὅτι μὲν οὖν χωρὶς τῆς γλώττης ἄχρηστος ὁ αὐλὸς, αὐτὸ δείκνυσι τὸ φαινόμενον. αἰτίαν δ' οὐ χρὴ ποθεῖν ἀκούειν ἐν τῷ παρόντι λόγῳ. λέλεκται γὰρ ἐν τῇ περὶ φωνῆς πραγματείᾳ, καθ' ἣν καὶ τοῦτο εὐθὺς ἀποδέδεικται, τὸ μὴ δύνασθαι γενέσθαι φωνὴν ἄνευ τοῦ στενωθῆναι τὴν διέξοδον.",
                 media: "image",
-                mediaUrl: "reference/glottis_illustration(1).png",
+                mediaUrl: "./reference/glottis_illustration(1).png",
                 reference: "Gal. UP. 7. 13. 408. 7-18 Helmreich = 561 Kühn"
             },
             {
@@ -324,7 +367,7 @@
                 content: "For if only the whole passage would entirely fall back, while the first two cartilages (thyroid and cricoid) are loosed and separated from each other, and the third (arytenoid) lied open, lest ever it would be possible to produce voice: but if the pneuma would be carried with no motion outside, a soundless expiration will be achieved: but if the pneuma would be carried at once and vehemently, what is called \"to sigh\" will be produced. In order that the animal would phonate, it requires a sudden carrying (of pneuma) from all of the parts below, and it requires no less of that and the passage in the larynx to be narrow and not simply narrow, but it is led gradually from the wide to the narrow part, and gradually it is widens again back from the narrow part. That is exactly how that body in our current discussion works, which indeed I name glōttis and the tongue of the larynx.",
                 greek: "εἰ γὰρ ἀναπεπταμένη τελέως εἴη σύμπασα, κεχαλασμένων μὲν τῶν πρώτων δυοῖν χόνδρων καὶ διεστώτων ἀπ' ἀλλήλων, ἀνεῳγμένου δὲ τοῦ τρίτου, μή ποτ' ἂν δύνασθαι γενέσθαι φωνήν· ἀλλ' εἰ μὲν ἀτρέμα τὸ πνεῦμα ἔξω φέροιτο, τὴν χωρὶς ψόφου συντελουμένην ἐκπνοήν· εἰ δ' ἀθρόως τε καὶ σφοδρῶς, τὸ καλούμενον στενάζειν γιγνόμενον. ἵνα δὲ φωνήσῃ τὸ ζῶον, δεῖσθαι πάντως καὶ τῆς κάτωθεν φορᾶς ἀθροωτέρας, δεῖσθαι δ' οὐδὲν ἧττον ταύτης καὶ τῆς κατὰ τὸν λάρυγγα διεξόδου στενωτέρας, καὶ οὐχ ἁπλῶς γε στενωτέρας, ἀλλὰ κατὰ βραχὺ μὲν ἐξ εὐρέος εἰς στενὸν ἀγομένης, κατὰ βραχὺ δ' ἐκ τοῦ στενοῦ πάλιν εὐρυνομένης. ὅπερ ἀκριβῶς ἐργάζεται τουτὶ τὸ σῶμα τὸ προκείμενον ἐν τῷ λόγῳ νῦν, ὃ δὴ γλωττίδα τε καὶ γλῶσσαν ὀνομάζω λάρυγγος.",
                 media: "video",
-                mediaUrl: "reference/glottis animation.mp4",
+                mediaUrl: "./reference/glottis animation.mp4",
                 reference: "Gal. UP. 7. 13. 408-409. 18-7 Helmreich = 3. 561-562 Kühn"
             },
             {
@@ -333,7 +376,7 @@
                 content: "For the muscles confining the arytenoid cartilage forcibly holding out against the pushed pneuma, to that function the nature of the aforesaid glōttis significantly contributes. For the parts of the glōttis, both the left and the right [the vocal folds and vestibular folds], come to it, so that they fall together to each other and accurately shut the passage [rima glottidis].",
                 greek: "ἀντέχουσι γὰρ οὗτοι βιαίως ὠθουμένῳ τῷ πνεύματι τὸν ἀρυταινοειδῆ κλείοντες χόνδρον. εἰς ὅπερ ἔργον οὐ σμικρὰ συντελεῖ τῆς προειρημένης γλωττίδος ἡ φύσις. εἰς ταὐτὸν γὰρ αὐτῆς ἔρχεται τὰ μόρια, τό τ' ἐκ τῶν ἀριστερῶν καὶ τὸ τῶν δεξιῶν, ὡς συμπεσεῖν ἀλλήλοις ἀκριβῶς καὶ κλείεσθαι τὸν πόρον.",
                 media: "video",
-                mediaUrl: "reference/glottis animation.mp4",
+                mediaUrl: "./reference/glottis animation.mp4",
                 reference: "Gal. UP. 7. 13. 409. 15-21 Helmreich = 3. 563 Kühn"
             },
             {
@@ -342,7 +385,7 @@
                 content: "And if some small unshut (passage) would be left, and especially in the animals where the whole larynx is wider, as such case was shown in the larger-voiced animals, that unguarded aperture is not disregarded by nature, placing under each part of the glōttis a considerable inner cavity in the aperture. whenever the air makes use of the broad ways as it enters and exits the body back and forth, none of it is pushed aside into the cavity: but since the passage is blocked and confined the air is thrusted vehemently toward the flanks and opens the small mouth of the glōttis, which until then was closed by the folding of the lips. For that very thing, that is of the folding, is the reason that aperture, discussed in this treatise, escaped the notice of all of the previous anatomists. Having the cavities in the tongue of the larynx filled with pneuma, air is poured off presumably in the necessary mass to that passage of the pneuma, and narrow it exactly, as if they opened it by little before. That skill of nature came into high accuracy regarding the tongue of the larynx in all its structure and in size and arrangement and in the apertures and cavities.",
                 greek: "εἰ δ' ἔτι σμικρὸν ἄκλειστον ὑπολειφθείη, καὶ μάλιστα ἐν οἷς ζώοις εὐρύτερός ἐστιν ὁ σύμπας λάρυγξ, (ἐδείχθη δὲ τοιοῦτος ἐν τοῖς μεγαλοφώνοις ὑπάρχων,) οὐδὲ τοῦτο ἀπρονόητον παρῶπται τῇ φύσει, τρῆμα καθ' ἑκάτερον μέρος τῆς γλωττίδος ἓν ἐργασαμένη, ὑποθείσῃ δὲ τῷ τρήματι κοιλίαν ἔνδον οὐ σμικράν. εἰς ἣν, ἐπειδὰν μὲν εὐρείαις ὁδοῖς ὁ ἀὴρ χρώμενος εἰσίῃ τε εἰς τὸ ζῶον καὶ ἐξίῃ αὖθις, οὐδὲν παρωθεῖται· φραχθείσης δὲ τῆς διεξόδου, στενοχωρούμενος ὠθεῖταί τε βιαίως πρὸς τὰ πλάγια καὶ τὸ τῆς γλωττίδος ἀνοίγνυσι στόμιον, ὃ τέως ἐκέκλειστο, τῶν χειλῶν ἐπεπτυγμένων. αὐτὸ γάρ τοι τοῦτο (τοῦτ' ἔστι τὸ τῆς ἐπιπτύξεως) αἴτιον τοῦ λαθεῖν ἅπαντας τοὺς ἔμπροσθεν ἀνατομικοὺς τὸ προκείμενον ἐν τῷ λόγῳ τρῆμα. πληρωθεισῶν δὲ πνεύματος τῶν ἐν τῇ γλώττῃ τοῦ λάρυγγος κοιλιῶν, ἀποχεῖσθαι μὲν δήπου τὸν ὄγκον ἀναγκαῖον εἰς αὐτὸν τοῦ πνεύματος τὸν πόρον, ἀκριβῶς δὲ στενοῦσθαι, κᾂν εἰς μικρόν τι πρόσθεν ἀνέῳκτο. αὕτη μὲν ἡ περὶ τὴν γλῶτταν τοῦ λάρυγγος τέχνη τῆς φύσεως ἔν τε τῷ σύμπαντι σχήματι καὶ τῷ μεγέθει καὶ τῇ θέσει καὶ τοῖς τρήμασι καὶ ταῖς κοιλίαις εἰς ἄκρον ἀκριβείας ἥκουσα.",
                 media: "video",
-                mediaUrl: "reference/glottis animation.mp4",
+                mediaUrl: "./reference/glottis animation.mp4",
                 reference: "Gal. UP. 7. 13. 409-410. 21-16 Helmreich = 3. 563-564 Kühn"
             },
             {
@@ -351,7 +394,7 @@
                 content: "Well if you will have in mind it (the tongue of the larynx) having been made bigger, you will block the ways of the pneuma, as it is accustomed to block them in inflammations. And having been made smaller, it will be more deficient of the right size and the animal act entirely mute: having lost only a little of such part the animal act as small-voiced and bad-voiced, in such way that it [the tongue of the larynx] lacks its proper size. And so shall you alter its position, or the size of the aperture or the cavity, you will destroy the whole utility.",
                 greek: "μείζονα γοῦν αὐτὴν εἴπερ ἐπινοήσαις γεγενημένην, ἀποφράξεις τὰς ὁδοὺς τοῦ πνεύματος, ὡς κἀν ταῖς φλεγμοναῖς ἀποφράττειν εἴωθεν. ἐλάττων δ' αὖ γενηθεῖσα, πολὺ μὲν ἐνδέουσα τοῦ μετρίου παντάπασιν ἄφωνον ἐργάζεται τὸ ζῷον· ὀλίγῳ δ' ἀπολειφθεῖσα μέρει τοσούτῳ μικροφωνότερόν τε καὶ κακοφωνότερον, ὅσῳπερ ἂν αὐτὴ λείπηται τοῦ συμμέτρου. οὕτω δὲ κἂν τὴν θέσιν αὐτῆς μετακινή- σῃς, ἢ τὸ μέγεθος τοῦ τρήματος ἢ τῆς κοιλίας ἀναιρήσεις ‖ τὴν ὅλην χρείαν.",
                 media: "video",
-                mediaUrl: "reference/glottis animation.mp4",
+                mediaUrl: "./reference/glottis animation.mp4",
                 reference: "Gal. UP. 7. 13. 410. 16-25 Helmreich = 3. 564-565 Kühn"
             },
             {
@@ -360,7 +403,7 @@
                 content: "Indeed, immediately along each aperture, as said, there is a part that is elongated from above downwards, as some narrow line, and yet it is not really narrow: but the membranous substance of the lips is as it is falling into the underlying concavity, and through that it seems more as a wrinkle rather than aperture before the lips unfold. And when they unfold it (the wrinkle) is immediately clearly observed, and clearly the underlying cavity to it. And being each of the apertures from the left and the right as such, some pneuma flows beside them with no reason to open the little-mouth or the filled cavity. Whenever it is pushed vehemently from below, and restrained from above, inasmuch as no more force to go straightforward, as some whirlpool experience, spinning toward the flanks of the passage, falling into them vehemently and arousing easily the membranous growths of each of the passages to the underlying concavities, to those which they incline by nature, filling and blowing through the entire glōttis.",
                 greek: "αὐτίκα γέ τοι τὸ τρῆμα καθ' ἑκάτερον, ὡς εἴρηται, μέρος ὑπάρχει, πρόμηκες δ' ἐστὶν ἄνωθεν κάτω, καθάπερ τις γραμμὴ στενή, καίτοι γ' οὐκ ὂν στενόν, ἀλλὰ τὸ τῶν χειλῶν ὑμενῶδες οἷόνπερ καταπῖπτον ἐστὶν εἰς τὴν ὑποκειμένην κοιλότητα, καὶ διὰ τοῦτο καθάπερ ῥυσότης μᾶλλον ἢ τρῆμα φαίνεται πρὶν διαπτυχθῆναι τὰ χείλη. διαπτυχθέντων δὲ σαφῶς μὲν ἤδη καὶ τοῦτο, σαφῶς δὲ καὶ ἡ ὑποκειμένη κοιλότης αὐτῷ θεωρεῖται. τοιούτου δ' ὄντος ἑκατέρου τοῦ τρήματος ἐξ ἀριστερῶν τε καὶ δεξιῶν παραρρεῖ τι πνεῦμα μηδεμίαν αἰτίαν ἔχον δεξιῶν παραρρεῖ τι πνεῦμα μηδεμίαν αἰτίαν ἔχον ἀνοιγνύναι τὸ στόμιον ἢ πληροῦν τὴν κοιλίαν. ὅταν δ' ὠθῆται μὲν κάτωθεν βιαίως, ἴσχηται δ' ἄνωθεν, ἅτε μηκέτι δυνάμενον εὐθυπορεῖν, οἷον ἴλιγγόν τινα παθὸν ἐπιστρέφεταί τε πρὸς τὰ πλάγια τοῦ πόρου καὶ τούτοις ἐμπίπτει βιαίως ἀνατρέπει τε ῥᾳδίως τὰς ὑμενώδεις ἐπιφύσεις ἑκατέρου τῶν πόρων εἰς τὰς ὑποκειμένας κοιλότητας, εἰς ἅσπερ καὶ ῥέπουσι φύσει, πληροῖ τ' αὖ καὶ διαφυσᾷ ‖ σύμπασαν τὴν γλωττίδα.",
                 media: "video",
-                mediaUrl: "reference/glottis animation.mp4",
+                mediaUrl: "./reference/glottis animation.mp4",
                 reference: "Gal. UP. 7. 13. 410-411. 25-17 Helmreich = 3. 565-566 Kühn"
             },
             {
@@ -369,7 +412,7 @@
                 content: "Since that, it is followed by necessity that the passage is blocked precisely. And that body of the glōttis was made of a membranous material not to break from being filled with pneuma and not at the time when the whole larynx widens and not when it contracts, obeying the opposing conditions of it (of the larynx), ever reaching the danger of breaking.",
                 greek: "τούτῳ δ' ἐξ ἀνάγκης ἕπεται φράττεσθαι τὸν πόρον ἀκριβῶς. αὐτὸ δὲ τὸ σῶμα τῆς γλωττίδος ὑμενῶδες μὲν ἐγένετο πρὸς τὸ μήτε πληρούμενον ὑπὸ τοῦ πνεύματος ῥήγνσθαι μήτ' ἐν τῷ ποτὲ μὲν εὐρύνεσθαι, ποτὲ δὲ συστέλλεσθαι τὸν ὅλον λάρυγγα, ταῖς ἐναντίαις αὐτοῦ καταστάσεσιν ἑπόμενον, εἰς κίνδυνον ἀφικέσθαι ποτὲ ῥήξεως·",
                 media: "video",
-                mediaUrl: "reference/glottis animation.mp4",
+                mediaUrl: "./reference/glottis animation.mp4",
                 reference: "Gal. UP. 7. 13. 411. 17-24 Helmreich = 3. 566 Kühn"
             },
             {
@@ -378,19 +421,50 @@
                 content: "and it is not simply moist, but with sticky and fatty liquid, in order to moisten by all fitting moist and not, as in the tongues of the auloi, that dry up continuously, requiring some additional liquid, and that becomes in need of external remedies. For the delicate and watery liquid being quickly dismissed into vapours, disperse and flow off easily straightway and much whenever the passage is inclined: and the sticky and fatty liquid suffices for much time and it does not readily flow off and not dry out. Therefore, if nature devised all other things in the structure of the larynx admirably, neglecting only the liquid of such sort, our voice would be corrupted because of quick dryness of the glōttis as well as all of the laryngeal structures, as now it is used to be rarely when the administration of nature is conquered by violent circumstances. For in burning fevers people cannot utter without wetting the larynx, and similarly in those that walked through the violent heat.",
                 greek: "ὑγρὸν δ' οὐχ ἁπλῶς, ἀλλὰ σὺν τῷ γλίσχρον τέ πως εἶναι καὶ λιπαρόν, ἵν' ἐπιτέγγηται διὰ παντὸς οἰκείᾳ νοτίδι καὶ μή, καθάπερ αἱ τῶν αὐλῶν γλῶτται ξηραινόμεναι συνεχῶς ἐπικτήτου τινὸς ὑγρότητος δέονται, καὶ αὐτὸ τῶν ἔξωθεν ἰαμάτων ἐπιδεὲς γίγνηται. τὸ μὲν γὰρ λεπτὸν καὶ ὑδατῶδες ὑγρὸν εἰς ἀτμοὺς τὸ μὲν γὰρ λεπτὸν καὶ ὑδατῶδες ὑγρὸν εἰς ἀτμοὺς διαλυόμενον ἐν τάχει διαφορεῖται ῥᾳδίως ἀπορρεῖ τε παραχρῆμα καὶ μάλισθ' ὅταν ᾖ κατάντης ὁ πόρος· τὸ δὲ γλίσχρον ἅμα καὶ λιπαρὸν ἐξαρκεῖ χρόνῳ παμπόλλῳ μήτ' ἀπορρέον ἑτοίμως μήτε ξηραινόμενον. ὥστ', εἴπερ καὶ τἄλλα πάνθ' ἡ φύσις ἐν τῇ τοῦ λάρυγγος κατα- σκευῇ θαυμαστῶς ἐτεχνήσατο, μόνης δὲ τῆς τοιαύτης ὑγρότητος ἐπελάθετο, διεφθείρετ' ἂν ‖ ἡμῶν ἡ φωνὴ διὰ ταχέων ξηραινομένης τῆς γλωττίδος ἅμα τοῖς κατὰ τὸν λάρυγγα σύμπασιν, ὥσπερ νῦν εἴωθε γίγνεσθαι σπανιάκις ὑπὸ βιαίων αἰτίων νικωμένης τῆς φυσικῆς διοικήσεως. ἔν τε γὰρ τοῖς περικαέσι πυρετοῖς οὐ δύνανται φθέγγεσθαι πρὶν διαβρέξαι τὸν λάρυγγα, καὶ ὅσοι διὰ καύματος ὡδοιπόρησαν σφοδροῦ.",
                 media: "video",
-                mediaUrl: "reference/glottis animation.mp4",
+                mediaUrl: "./reference/glottis animation.mp4",
                 reference: "Gal. UP. 7. 13. 411-412. 25-14 Helmreich = 3. 566 Kühn"
             }
         ];
 
-        const useAppStore = create((set) => ({
+        // Load persisted state
+        const saved = (() => { try { return JSON.parse(localStorage.getItem('galenAppState') || '{}'); } catch { return {}; } })();
+        const savedAnnotations = (() => { try { return JSON.parse(localStorage.getItem('galenAnnotations') || '{}'); } catch { return {}; } })();
+
+        const useAppStore = create((set, get) => ({
             currentStepIndex: 0,
-            activeSection: 'intro', // 'intro' | 'larynx' | 'pneuma' | 'analysis'
+            activeSection: 'intro',
             activeTerm: null,
+            darkMode: saved.darkMode || false,
+            greekVisible: saved.greekVisible !== undefined ? saved.greekVisible : true,
+            glossaryOpen: false,
+            searchQuery: '',
+            annotations: savedAnnotations,
+
             setStep: (index) => set({ currentStepIndex: index }),
             setActiveSection: (section) => set({ activeSection: section, currentStepIndex: 0 }),
-            setActiveTerm: (term) => set({ activeTerm: term })
+            setActiveTerm: (term) => set({ activeTerm: term }),
+            toggleDark: () => {
+                const next = !get().darkMode;
+                set({ darkMode: next });
+                document.body.classList.toggle('dark', next);
+                localStorage.setItem('galenAppState', JSON.stringify({ ...JSON.parse(localStorage.getItem('galenAppState') || '{}'), darkMode: next }));
+            },
+            toggleGreek: () => {
+                const next = !get().greekVisible;
+                set({ greekVisible: next });
+                localStorage.setItem('galenAppState', JSON.stringify({ ...JSON.parse(localStorage.getItem('galenAppState') || '{}'), greekVisible: next }));
+            },
+            setGlossaryOpen: (val) => set({ glossaryOpen: val }),
+            setSearchQuery: (q) => set({ searchQuery: q }),
+            setAnnotation: (key, text) => {
+                const next = { ...get().annotations, [key]: text };
+                set({ annotations: next });
+                localStorage.setItem('galenAnnotations', JSON.stringify(next));
+            }
         }));
+
+        // Apply saved dark mode on first load
+        if (saved.darkMode) document.body.classList.add('dark');
 
         // --- Pneuma Visualizer Component ---
         const PneumaVisualizer = () => {
@@ -581,47 +655,62 @@
         };
 
         // --- NAVIGATION COMPONENT ---
+        const NavBtn = ({ label, active, onClick, title, children }) => (
+            <button
+                onClick={onClick}
+                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300 w-full ${active ? 'bg-galen-red text-white shadow-md' : 'text-black/40 hover:bg-black/5 hover:text-galen-red'}`}
+                title={title}
+            >
+                {children}
+                <span className="text-[9px] font-sans uppercase tracking-wide leading-none hidden md:block">{label}</span>
+            </button>
+        );
+
         const Navigation = () => {
-            const { activeSection, setActiveSection } = useAppStore();
+            const { activeSection, setActiveSection, glossaryOpen, setGlossaryOpen, darkMode, toggleDark } = useAppStore();
             return (
-                <nav className="bg-white border-r border-ink/10 flex flex-col items-center py-8 gap-8 w-16 md:w-20 shrink-0 z-50 shadow-lg">
-                    <div className="w-8 h-8 rounded-full bg-galen-red/10 text-galen-red flex items-center justify-center font-serif font-bold text-xl mb-4">
+                <nav className="bg-white border-r border-ink/10 flex flex-col items-center py-6 gap-4 w-14 md:w-[72px] shrink-0 z-50 shadow-lg">
+                    <div className="w-8 h-8 rounded-full bg-galen-red/10 text-galen-red flex items-center justify-center font-serif font-bold text-xl mb-2 shrink-0">
                         G
                     </div>
-                    <button
-                        onClick={() => setActiveSection('intro')}
-                        className={`p-3 rounded-xl transition-all duration-300 relative group ${activeSection === 'intro' ? 'bg-galen-red text-white shadow-md' : 'text-black/40 hover:bg-black/5 hover:text-galen-red'}`}
-                        title="Home"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                    </button>
 
-                    <button
-                        onClick={() => setActiveSection('larynx')}
-                        className={`p-3 rounded-xl transition-all duration-300 relative group ${activeSection === 'larynx' ? 'bg-galen-red text-white shadow-md' : 'text-black/40 hover:bg-black/5 hover:text-galen-red'}`}
-                        title="Anatomy"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    </button>
+                    <NavBtn label="Home" active={activeSection === 'intro' && !glossaryOpen} onClick={() => { setGlossaryOpen(false); setActiveSection('intro'); }} title="Home">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                    </NavBtn>
 
-                    <button
-                        onClick={() => setActiveSection('pneuma')}
-                        className={`p-3 rounded-xl transition-all duration-300 relative group ${activeSection === 'pneuma' ? 'bg-galen-red text-white shadow-md' : 'text-black/40 hover:bg-black/5 hover:text-galen-red'}`}
-                        title="Physiology"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    </button>
+                    <NavBtn label="Anatomy" active={activeSection === 'larynx' && !glossaryOpen} onClick={() => { setGlossaryOpen(false); setActiveSection('larynx'); }} title="Anatomy of the Larynx">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    </NavBtn>
 
-                    <button
-                        onClick={() => setActiveSection('analysis')}
-                        className={`p-3 rounded-xl transition-all duration-300 relative group ${activeSection === 'analysis' ? 'bg-galen-red text-white shadow-md' : 'text-black/40 hover:bg-black/5 hover:text-galen-red'}`}
-                        title="Textual Analysis"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                    </button>
+                    <NavBtn label="Pneuma" active={activeSection === 'pneuma' && !glossaryOpen} onClick={() => { setGlossaryOpen(false); setActiveSection('pneuma'); }} title="Physiology & Pneuma">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </NavBtn>
+
+                    <NavBtn label="Texts" active={activeSection === 'analysis' && !glossaryOpen} onClick={() => { setGlossaryOpen(false); setActiveSection('analysis'); }} title="Textual Analysis">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                    </NavBtn>
+
+                    <NavBtn label="Glossary" active={glossaryOpen} onClick={() => setGlossaryOpen(!glossaryOpen)} title="Full Glossary">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                    </NavBtn>
+
+                    <div className="mt-auto">
+                        <button
+                            onClick={toggleDark}
+                            className="flex flex-col items-center gap-1 p-2 rounded-xl text-black/40 hover:bg-black/5 hover:text-galen-red transition-all duration-300 w-full"
+                            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                        >
+                            {darkMode ? (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                            ) : (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                            )}
+                            <span className="text-[9px] font-sans uppercase tracking-wide leading-none hidden md:block">{darkMode ? 'Light' : 'Dark'}</span>
+                        </button>
+                    </div>
                 </nav>
-            )
-        }
+            );
+        };
 
         // --- COMPONENTS ---
 
@@ -698,7 +787,7 @@
                 return (
                     <div className="w-full h-full flex items-center justify-center bg-parchment relative overflow-hidden">
                         <img
-                            src="reference/main_page_photo.png"
+                            src="./reference/main_page_photo.png"
                             alt="Galen's Glottis"
                             className="max-w-[70%] max-h-[70%] object-contain drop-shadow-xl saturate-50 opacity-90 transition-all duration-1000 hover:scale-105 hover:opacity-100"
                         />
@@ -809,9 +898,94 @@
             );
         };
 
+        // --- GLOSSARY BROWSER PANEL (F2) ---
+        const GlossaryBrowser = () => {
+            const { setGlossaryOpen, setActiveTerm } = useAppStore();
+            const entries = Object.entries(GLOSSARY);
+            const [filter, setFilter] = useState('');
+            const filtered = entries.filter(([k, v]) =>
+                v.term.toLowerCase().includes(filter.toLowerCase()) ||
+                v.def.toLowerCase().includes(filter.toLowerCase())
+            );
+            return (
+                <div className="flex flex-col h-full relative">
+                    <div className="p-8 pb-4 border-b border-black/10">
+                        <div className="flex items-center justify-between mb-4">
+                            <h1 className="text-3xl font-serif font-bold text-galen-red">Glossary</h1>
+                            <button onClick={() => setGlossaryOpen(false)} className="text-black/30 hover:text-black transition-colors">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <p className="text-sm text-black/50 font-serif italic mb-4">All technical terms used in this edition, with definitions and ATLOMY links.</p>
+                        <input
+                            type="text"
+                            placeholder="Filter terms…"
+                            value={filter}
+                            onChange={e => setFilter(e.target.value)}
+                            className="w-full px-3 py-2 border border-black/20 rounded-lg text-sm font-sans focus:outline-none focus:ring-2 focus:ring-galen-red/30 bg-transparent"
+                        />
+                    </div>
+                    <div className="flex-1 overflow-y-auto no-scrollbar px-8 py-4 space-y-6">
+                        {filtered.map(([key, entry]) => (
+                            <div key={key} className="border-b border-black/10 pb-6 last:border-0">
+                                <div className="flex items-start justify-between gap-4 mb-2">
+                                    <div>
+                                        <h3 className="text-xl font-serif font-bold text-galen-red">{entry.term}</h3>
+                                        <span className="text-xs font-sans uppercase tracking-wider text-black/40">{key}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => { setGlossaryOpen(false); setActiveTerm(key); }}
+                                        className="shrink-0 text-xs font-sans text-galen-red border border-galen-red/40 px-2 py-1 rounded hover:bg-galen-red hover:text-white transition-all"
+                                    >
+                                        Details
+                                    </button>
+                                </div>
+                                <p className="font-serif text-base leading-relaxed text-black/70">{entry.def}</p>
+                                {entry.url && (
+                                    <a href={entry.url} target="_blank" rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs text-galen-red hover:underline mt-2 font-sans font-bold">
+                                        ATLOMY →
+                                    </a>
+                                )}
+                            </div>
+                        ))}
+                        {filtered.length === 0 && (
+                            <p className="text-center text-black/30 italic py-12 font-serif">No terms match your filter.</p>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- PRINT HELPER (F6) ---
+        const printStep = (step, section) => {
+            const el = document.getElementById('print-target');
+            if (!el) return;
+            const openQuote = '\u201c';
+            const closeQuote = '\u201d';
+            const cleanContent = step.content.replace(/<[^>]+>/g, '');
+            let html = '<div style="color:#666;font-size:0.8em;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5em;">Galen\'s Phonatory System \u2014 ' + section + '</div>';
+            html += '<h1 style="font-size:1.8em;color:#8b0000;margin:0 0 0.5em;">' + step.title + '</h1>';
+            if (step.greek) {
+                html += '<div style="margin:1em 0;padding:1em;background:#f9f6ed;border-left:3px solid #8b0000;font-style:italic;font-size:1.1em;line-height:1.7;">' + openQuote + step.greek + closeQuote + '</div>';
+            }
+            html += '<p style="font-size:1.1em;line-height:1.8;">' + cleanContent + '</p>';
+            if (step.reference) {
+                html += '<div style="margin-top:1.5em;padding-top:0.5em;border-top:1px solid #ccc;font-size:0.85em;color:#666;font-style:italic;text-align:right;">' + step.reference + '</div>';
+            }
+            el.innerHTML = html;
+            window.print();
+            setTimeout(function() { el.innerHTML = ''; }, 1000);
+        };
+
         const NarrativePanel = () => {
-            const { currentStepIndex, setStep, activeSection, setActiveSection } = useAppStore();
+            const {
+                currentStepIndex, setStep, activeSection, setActiveSection,
+                greekVisible, toggleGreek, annotations, setAnnotation,
+                searchQuery, setSearchQuery
+            } = useAppStore();
             const stepRefs = useRef([]);
+            const searchRef = useRef(null);
 
             // Scroll active step into view
             useEffect(() => {
@@ -821,9 +995,14 @@
                 }
             }, [currentStepIndex, activeSection]);
 
-            // Keyboard Navigation
+            // Keyboard Navigation (B3: guard against 'intro' section)
             useEffect(() => {
                 const handleKeyDown = (e) => {
+                    // B3 fix: do not navigate when on intro
+                    if (activeSection === 'intro') return;
+                    // Also skip if user is typing in an input
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
                     let SCRIPT;
                     if (activeSection === 'pneuma') SCRIPT = SCRIPT_PNEUMA;
                     else if (activeSection === 'analysis') SCRIPT = SCRIPT_ANALYSIS;
@@ -835,7 +1014,6 @@
                         if (currentStepIndex > 0) setStep(currentStepIndex - 1);
                     }
                 };
-
                 window.addEventListener('keydown', handleKeyDown);
                 return () => window.removeEventListener('keydown', handleKeyDown);
             }, [currentStepIndex, activeSection, setStep]);
@@ -859,32 +1037,21 @@
                                 </a>
                             </p>
 
-                            <div className="flex flex-col gap-6">
-                                <div className="group cursor-pointer hover:bg-black/5 p-4 -mx-4 rounded-xl transition-colors" onClick={() => setActiveSection('larynx')}>
-                                    <h3 className="text-xl font-bold text-galen-red mb-2 flex items-center gap-2">
-                                        <span className="w-6 h-6 rounded-full border border-galen-red flex items-center justify-center text-sm">1</span>
-                                        Anatomy of the Larynx
-                                    </h3>
-                                    <p className="text-black/70 font-serif">Explore the "First Instrument of Voice". Detailed 3D reconstruction of the cartilages and muscles that frame the phonatory act.</p>
-                                </div>
-
-                                <div className="group cursor-pointer hover:bg-black/5 p-4 -mx-4 rounded-xl transition-colors" onClick={() => setActiveSection('pneuma')}>
-                                    <h3 className="text-xl font-bold text-galen-red mb-2 flex items-center gap-2">
-                                        <span className="w-6 h-6 rounded-full border border-galen-red flex items-center justify-center text-sm">2</span>
-                                        Pneuma & Voice
-                                    </h3>
-                                    <p className="text-black/70 font-serif">Visualise the physiological transformation of breath into voice.
-                                        <span className="block mt-1 text-xs font-sans text-galen-red/80 uppercase tracking-wider font-bold">Note: This section is currently experimental.</span>
-                                    </p>
-                                </div>
-
-                                <div className="group cursor-pointer hover:bg-black/5 p-4 -mx-4 rounded-xl transition-colors" onClick={() => setActiveSection('analysis')}>
-                                    <h3 className="text-xl font-bold text-galen-red mb-2 flex items-center gap-2">
-                                        <span className="w-6 h-6 rounded-full border border-galen-red flex items-center justify-center text-sm">3</span>
-                                        Interactive Textual Analysis
-                                    </h3>
-                                    <p className="text-black/70 font-serif">Read Galen's original Greek text on the Glottis alongside English translation and visual commentary.</p>
-                                </div>
+                            <div className="flex flex-col gap-4">
+                                {[
+                                    { section: 'larynx', n: 1, title: 'Anatomy of the Larynx', desc: 'Explore the "First Instrument of Voice" — cartilages, muscles, and nerves.' },
+                                    { section: 'pneuma', n: 2, title: 'Pneuma & Voice', desc: 'Visualise the physiological transformation of breath into voice.' },
+                                    { section: 'analysis', n: 3, title: 'Interactive Textual Analysis', desc: 'Galen\'s original Greek text alongside English translation and commentary.' },
+                                ].map(({ section, n, title, desc }) => (
+                                    <div key={section} className="group cursor-pointer hover:bg-black/5 p-4 -mx-4 rounded-xl transition-all duration-200 border border-transparent hover:border-galen-red/20" onClick={() => setActiveSection(section)}>
+                                        <h3 className="text-xl font-bold text-galen-red mb-1 flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full border border-galen-red flex items-center justify-center text-sm shrink-0">{n}</span>
+                                            {title}
+                                            <span className="ml-auto text-sm font-sans text-galen-red/60 group-hover:translate-x-1 transition-transform">→</span>
+                                        </h3>
+                                        <p className="text-black/70 font-serif pl-8">{desc}</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                         <div className="mt-auto pt-12 text-center text-black/40 text-sm font-sans">
@@ -899,6 +1066,18 @@
             else if (activeSection === 'analysis') SCRIPT = SCRIPT_ANALYSIS;
             else SCRIPT = SCRIPT_LARYNX;
 
+            const sectionLabel = activeSection === 'pneuma' ? 'Pneuma & Voice'
+                : activeSection === 'analysis' ? 'Textual Analysis'
+                : 'Anatomy of the Larynx';
+
+            // F5: Search filter — find steps matching the query
+            const matchingIndices = searchQuery.trim()
+                ? SCRIPT.map((s, i) => {
+                    const q = searchQuery.toLowerCase();
+                    return (s.title + ' ' + s.content + ' ' + (s.greek || '')).toLowerCase().includes(q) ? i : -1;
+                  }).filter(i => i >= 0)
+                : [];
+
             const renderContent = (content) => {
                 const parts = content.split(/(<[^>]+>[^<]+<\/[^>]+>)/g);
                 return parts.map((part, i) => {
@@ -908,8 +1087,18 @@
                         if (GLOSSARY[termKey]) {
                             return <TermLink key={i} termKey={termKey}>{text}</TermLink>;
                         }
-                        // Fallback: If no glossary entry exists, render just the text clean
                         return <span key={i}>{text}</span>;
+                    }
+                    // F5: Highlight search matches in content
+                    if (searchQuery.trim() && part.toLowerCase().includes(searchQuery.toLowerCase())) {
+                        const idx = part.toLowerCase().indexOf(searchQuery.toLowerCase());
+                        return (
+                            <span key={i}>
+                                {part.slice(0, idx)}
+                                <mark style={{background:'#fde68a',color:'inherit'}}>{part.slice(idx, idx + searchQuery.length)}</mark>
+                                {part.slice(idx + searchQuery.length)}
+                            </span>
+                        );
                     }
                     return part;
                 });
@@ -917,87 +1106,206 @@
 
             return (
                 <div className="flex flex-col h-full relative">
-                    <div className="flex-1 p-8 overflow-y-auto no-scrollbar pb-24">
-                        <div className="pt-10">
-                            <h1 className="text-4xl font-serif font-bold mb-4 text-galen-red">Galen's Phonatory System</h1>
-                            <p className="italic text-black/60">An Interactive Scholarly Edition</p>
+                    {/* Scrollable content area */}
+                    <div className="flex-1 px-8 pt-8 overflow-y-auto no-scrollbar pb-28">
+                        <div className="pt-6 mb-6">
+                            <h1 className="text-3xl font-serif font-bold mb-1 text-galen-red">Galen's Phonatory System</h1>
+                            <p className="italic text-black/60 text-sm">{sectionLabel} — An Interactive Scholarly Edition</p>
                         </div>
 
-                        {SCRIPT.map((step, index) => (
-                            <div
-                                key={step.id}
-                                ref={el => stepRefs.current[index] = el}
-                                className={`flex flex-col shrink-0 transition-all duration-500 cursor-pointer ${activeSection === 'analysis'
-                                    ? 'min-h-0 py-16 justify-start'
-                                    : 'min-h-[60vh] justify-center'
-                                    } ${index === currentStepIndex
-                                        ? 'opacity-100 pl-4 border-l-4 border-galen-red'
-                                        : 'opacity-30 border-l-4 border-transparent hover:opacity-60'
-                                    }`}
-                                onClick={() => setStep(index)}
-                            >
-                                <h2 className="text-2xl font-bold mb-4 font-serif text-galen-red">{step.title}</h2>
-
-                                {/* Special rendering for Analysis section */}
-                                {activeSection === 'analysis' && step.greek && (
-                                    <div className="mb-6 p-4 bg-parchment/50 border border-ink/10 rounded italic font-serif text-lg leading-relaxed text-black/80">
-                                        "{step.greek}"
-                                    </div>
-                                )}
-
-                                <p className="text-xl leading-relaxed font-serif text-justify">
-                                    {renderContent(step.content)}
-                                </p>
-
-                                {step.reference && (
-                                    <div className="mt-4 pt-4 border-t border-black/10 text-xs font-serif text-black/50 italic text-right">
-                                        {step.reference}
-                                    </div>
+                        {/* F5: Search bar */}
+                        <div className="mb-6 flex gap-2 items-center">
+                            <div className="relative flex-1">
+                                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" /></svg>
+                                <input
+                                    ref={searchRef}
+                                    type="text"
+                                    placeholder="Search steps…"
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    className="w-full pl-9 pr-3 py-2 border border-black/20 rounded-lg text-sm font-sans focus:outline-none focus:ring-2 focus:ring-galen-red/30 bg-transparent"
+                                />
+                                {searchQuery && (
+                                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-black/30 hover:text-black">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
                                 )}
                             </div>
-                        ))}
-                        <div className="h-[40vh] flex items-center justify-center text-black/30 italic">
-                            End of Sequence
+                            {/* F6: Print button */}
+                            <button
+                                onClick={() => printStep(SCRIPT[currentStepIndex], sectionLabel)}
+                                title="Print / Save as PDF"
+                                className="p-2 rounded-lg border border-black/20 text-black/40 hover:text-galen-red hover:border-galen-red/40 transition-all no-print"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            </button>
+                            {/* F1: Greek/English toggle (Analysis only) */}
+                            {activeSection === 'analysis' && (
+                                <button
+                                    onClick={toggleGreek}
+                                    title={greekVisible ? 'Hide Greek text' : 'Show Greek text'}
+                                    className={`px-3 py-2 rounded-lg border text-xs font-sans font-bold transition-all no-print ${greekVisible ? 'bg-galen-red text-white border-galen-red' : 'border-black/20 text-black/40 hover:border-galen-red/40 hover:text-galen-red'}`}
+                                >
+                                    Ελ
+                                </button>
+                            )}
+                        </div>
+
+                        {/* F5: search result summary */}
+                        {searchQuery.trim() && (
+                            <div className="mb-4 text-sm font-sans text-black/50">
+                                {matchingIndices.length} step{matchingIndices.length !== 1 ? 's' : ''} match "{searchQuery}"
+                                {matchingIndices.length > 0 && (
+                                    <span className="ml-2">
+                                        {matchingIndices.map(i => (
+                                            <button key={i} onClick={() => { setSearchQuery(''); setStep(i); }} className="mx-1 underline text-galen-red hover:text-[#8b0000]">
+                                                Step {i + 1}
+                                            </button>
+                                        ))}
+                                    </span>
+                                )}
+                            </div>
+                        )}
+
+                        {SCRIPT.map((step, index) => {
+                            const annotationKey = `${activeSection}_${step.id}`;
+                            const ann = annotations[annotationKey] || '';
+                            const isActive = index === currentStepIndex;
+                            return (
+                                <div
+                                    key={step.id}
+                                    ref={el => stepRefs.current[index] = el}
+                                    className={`flex flex-col shrink-0 transition-all duration-500 cursor-pointer ${activeSection === 'analysis'
+                                        ? 'min-h-0 py-12 justify-start'
+                                        : 'min-h-[60vh] justify-center'
+                                        } ${isActive
+                                            ? 'opacity-100 pl-4 border-l-4 border-galen-red'
+                                            : 'opacity-40 border-l-4 border-transparent hover:opacity-65'
+                                        }`}
+                                    onClick={() => setStep(index)}
+                                >
+                                    <h2 className="text-2xl font-bold mb-4 font-serif text-galen-red">{step.title}</h2>
+
+                                    {/* F1: Greek/English toggle — B1: fix quote rendering */}
+                                    {activeSection === 'analysis' && step.greek && greekVisible && (
+                                        <div className="mb-6 p-4 bg-parchment/50 border border-ink/10 rounded font-serif text-base leading-relaxed text-black/80">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs font-sans uppercase tracking-wider text-black/40">Greek Text</span>
+                                            </div>
+                                            <span className="text-lg italic">"{step.greek}"</span>
+                                        </div>
+                                    )}
+
+                                    <p className={`leading-relaxed font-serif text-justify ${activeSection === 'analysis' ? 'text-lg' : 'text-xl'}`}>
+                                        {renderContent(step.content)}
+                                    </p>
+
+                                    {step.reference && (
+                                        <div className="mt-4 pt-4 border-t border-black/10 text-xs font-serif text-black/50 italic text-right">
+                                            {step.reference}
+                                        </div>
+                                    )}
+
+                                    {/* F3: Annotation field (shown only for active step) */}
+                                    {isActive && (
+                                        <div className="mt-6 no-print" onClick={e => e.stopPropagation()}>
+                                            <label className="block text-xs font-sans uppercase tracking-wider text-black/40 mb-2">
+                                                <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                Your Notes (saved automatically)
+                                            </label>
+                                            <textarea
+                                                value={ann}
+                                                onChange={e => setAnnotation(annotationKey, e.target.value)}
+                                                placeholder="Add your notes for this step…"
+                                                rows={3}
+                                                className="w-full px-3 py-2 border border-black/20 rounded-lg text-sm font-sans resize-none focus:outline-none focus:ring-2 focus:ring-galen-red/30 bg-transparent"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+
+                        {/* Styled end-of-sequence card (replaces plain "End of Sequence" text) */}
+                        <div className="py-16 flex flex-col items-center gap-4 text-center">
+                            <div className="w-12 h-px bg-galen-red/30 mx-auto"></div>
+                            <p className="font-serif italic text-black/40 text-lg">End of {sectionLabel}</p>
+                            <button
+                                onClick={() => {
+                                    const sections = ['larynx', 'pneuma', 'analysis'];
+                                    const idx = sections.indexOf(activeSection);
+                                    const next = sections[(idx + 1) % sections.length];
+                                    setActiveSection(next);
+                                }}
+                                className="mt-2 px-5 py-2 bg-galen-red/10 text-galen-red border border-galen-red/30 rounded-lg text-sm font-sans hover:bg-galen-red hover:text-white transition-all duration-200"
+                            >
+                                Continue to next section →
+                            </button>
                         </div>
                     </div>
 
-                    {/* Fixed Navigation Controls */}
-                    <div className="absolute bottom-0 left-0 w-full bg-white/90 backdrop-blur border-t border-black/10 p-4 flex items-center justify-between z-20">
-                        <button
-                            disabled={currentStepIndex === 0}
-                            onClick={() => setStep(Math.max(0, currentStepIndex - 1))}
-                            className="px-4 py-2 rounded border border-black/20 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed font-serif flex items-center gap-2"
-                        >
-                            <span>←</span> Previous
-                        </button>
-
-                        <div className="text-sm font-sans text-black/50">
-                            Step {currentStepIndex + 1} of {SCRIPT.length}
+                    {/* Fixed bottom bar: progress dots (F4) + prev/next */}
+                    <div className="absolute bottom-0 left-0 w-full bg-white/90 backdrop-blur border-t border-black/10 px-4 py-3 z-20 no-print">
+                        {/* F4: Progress dots */}
+                        <div className="flex items-center justify-center gap-1.5 mb-2 flex-wrap">
+                            {SCRIPT.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setStep(i)}
+                                    title={`Step ${i + 1}: ${SCRIPT[i].title}`}
+                                    className={`rounded-full transition-all duration-300 ${i === currentStepIndex
+                                        ? 'w-4 h-2 bg-galen-red'
+                                        : i < currentStepIndex
+                                            ? 'w-2 h-2 bg-galen-red/40'
+                                            : 'w-2 h-2 bg-black/15 hover:bg-galen-red/30'
+                                        }`}
+                                />
+                            ))}
                         </div>
 
-                        <button
-                            disabled={currentStepIndex === SCRIPT.length - 1}
-                            onClick={() => setStep(Math.min(SCRIPT.length - 1, currentStepIndex + 1))}
-                            className="px-4 py-2 rounded bg-galen-red text-white hover:bg-[#8b0000] disabled:opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed font-serif flex items-center gap-2 shadow-sm transition-all"
-                        >
-                            Next <span>→</span>
-                        </button>
+                        {/* Prev / counter / Next */}
+                        <div className="flex items-center justify-between">
+                            <button
+                                disabled={currentStepIndex === 0}
+                                onClick={() => setStep(Math.max(0, currentStepIndex - 1))}
+                                className="px-4 py-1.5 rounded border border-black/20 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed font-serif text-sm flex items-center gap-2"
+                            >
+                                ← Previous
+                            </button>
+
+                            <div className="text-xs font-sans text-black/50">
+                                {currentStepIndex + 1} / {SCRIPT.length}
+                            </div>
+
+                            <button
+                                disabled={currentStepIndex === SCRIPT.length - 1}
+                                onClick={() => setStep(Math.min(SCRIPT.length - 1, currentStepIndex + 1))}
+                                className="px-4 py-1.5 rounded bg-galen-red text-white hover:bg-[#8b0000] disabled:opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed font-serif text-sm flex items-center gap-2 shadow-sm transition-all"
+                            >
+                                Next →
+                            </button>
+                        </div>
                     </div>
                 </div>
             );
         };
 
         const App = () => {
+            const { glossaryOpen } = useAppStore();
             return (
                 <div className="flex flex-col md:flex-row h-screen w-full font-serif overflow-hidden">
                     <UrlSync />
                     <GlossaryCard />
+                    {/* Hidden print target */}
+                    <div id="print-target" />
                     <Navigation />
-                    <div className="w-full md:w-3/5 h-[40vh] md:h-full bg-parchment relative shadow-inner order-1 md:order-2">
+                    {/* Media panel (hidden when glossary is open on mobile) */}
+                    <div className={`${glossaryOpen ? 'hidden md:flex' : ''} w-full md:w-3/5 h-[50vh] md:h-full bg-parchment relative shadow-inner order-1 md:order-2`}>
                         <MediaViewer />
                     </div>
-                    <div className="w-full md:w-2/5 h-[60vh] md:h-full bg-white z-10 shadow-2xl relative order-2 md:order-1">
-                        <NarrativePanel />
+                    {/* Text/Glossary panel */}
+                    <div className="w-full md:w-2/5 h-[50vh] md:h-full bg-white z-10 shadow-2xl relative order-2 md:order-1 flex flex-col">
+                        {glossaryOpen ? <GlossaryBrowser /> : <NarrativePanel />}
                     </div>
                 </div>
             );
