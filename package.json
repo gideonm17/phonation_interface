@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "sync-glossary": "node scripts/sync-glossary.js"
+  },
   "dependencies": {
     "@babel/standalone": "^7.29.2"
   }
