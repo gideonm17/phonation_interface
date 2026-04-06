@@ -22,7 +22,9 @@ export const GlossaryCard = () => {
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
 
-                <h3 className="text-2xl font-serif font-bold text-galen-red mb-1">{entry.term}</h3>
+                <h3 className="text-2xl font-serif font-bold text-galen-red mb-0.5">
+                    {entry.greek}, {entry.term}
+                </h3>
                 <p className="text-xs font-sans uppercase tracking-wider text-black/40 mb-4">Glossary Entry</p>
 
                 <p className="font-serif text-lg leading-relaxed text-slate-700 mb-6">

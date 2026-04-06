@@ -12,6 +12,7 @@ export interface Step {
 import glossaryData from './glossary.json';
 
 export interface GlossaryEntry {
+    greek: string;
     term: string;
     def: string;
     url?: string;
