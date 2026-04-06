@@ -485,224 +485,289 @@
             const { currentStepIndex } = useAppStore();
             const step = SCRIPT_PNEUMA[currentStepIndex];
             const stageMap = {
-                "pneuma_intro": 0,
-                "pneuma_brain": 1,
-                "pneuma_thorax": 2,
-                "pneuma_trachea": 3,
-                "pneuma_larynx": 4,
-                "pneuma_strike": 5,
-                "pneuma_voice": 6
+                "pneuma_intro": 0, "pneuma_brain": 1, "pneuma_thorax": 2,
+                "pneuma_trachea": 3, "pneuma_larynx": 4, "pneuma_strike": 5, "pneuma_voice": 6
             };
-
             const stage = step && stageMap[step.id] !== undefined ? stageMap[step.id] : -1;
 
-            const particles = useMemo(() => Array.from({ length: 18 }).map((_, i) => ({
+            const particles = useMemo(() => Array.from({ length: 20 }).map((_, i) => ({
                 id: i,
-                r: Math.random() * 2 + 1,
-                pathOffset1: 205 + (Math.random() * 20 - 10),
-                pathOffset2: 215 + (Math.random() * 10 - 5),
-                begin: i * 0.18,
-                durStage4: (0.7 + Math.random() * 0.3),
-                durStage6: (0.18 + Math.random() * 0.15),
-                durDefault: (2.8 + Math.random())
+                r: parseFloat((1.4 + Math.random() * 1.6).toFixed(2)),
+                x: parseFloat((208 + Math.random() * 10 - 5).toFixed(1)),
+                begin: parseFloat((i * 0.17).toFixed(2)),
+                dSlow: parseFloat((2.6 + Math.random() * 0.7).toFixed(2)),
+                dMed:  parseFloat((0.65 + Math.random() * 0.2).toFixed(2)),
+                dFast: parseFloat((0.08 + Math.random() * 0.04).toFixed(2)),
             })), []);
 
             if (stage === -1) return null;
 
-            const stageLabels = ["Overview","Voluntary Control","ἐκφύσησις Generated","Tracheal Preprocessing","Glōttis Narrows","Πληγή","Φωνή Emerges"];
+            const stageLabels = ["Overview","Voluntary Control","Ekphysēsis","Tracheal Preprocessing","Glōttis Narrows","Πληγή — The Strike","Φωνή Emerges"];
+
+            const pdur = (p) => stage >= 6 ? `${p.dFast}s` : stage >= 5 ? '0.09s' : stage >= 4 ? `${p.dMed}s` : `${p.dSlow}s`;
+            const show = (from) => ({ opacity: stage >= from ? 1 : stage === 0 ? 0.15 : 0.07, transition: 'opacity 0.7s ease' });
 
             return (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-[#F7F3EA] relative overflow-hidden">
-                    <div className="absolute top-4 left-0 right-0 flex justify-center gap-1.5 z-10 px-6">
+                    <div className="absolute top-3 left-0 right-0 flex justify-center gap-1 z-10 px-8">
                         {stageLabels.map((label, i) => (
-                            <div key={i} title={label}
-                                className={`h-1.5 rounded-full transition-all duration-500 ${i === stage ? 'bg-[#8b0000] flex-[2]' : i < stage ? 'bg-[#8b0000]/40 flex-1' : 'bg-black/10 flex-1'}`}
-                            />
+                            <div key={i} title={label} className={`h-1.5 rounded-full transition-all duration-500 ${
+                                i === stage ? 'bg-[#8b0000] flex-[2]' : i < stage ? 'bg-[#8b0000]/35 flex-1' : 'bg-black/10 flex-1'
+                            }`} />
                         ))}
                     </div>
-                    <div className="absolute top-8 left-0 right-0 text-center">
-                        <span style={{fontSize:'10px', letterSpacing:'0.12em', textTransform:'uppercase', fontFamily:'Georgia,serif', color:'rgba(0,0,0,0.38)', userSelect:'none'}}>
+                    <div className="absolute top-7 left-0 right-0 text-center">
+                        <span style={{fontSize:'9px', letterSpacing:'0.12em', textTransform:'uppercase', fontFamily:'Georgia,serif', color:'rgba(0,0,0,0.38)'}}>
                             {stageLabels[stage]}
                         </span>
                     </div>
 
-                    <svg viewBox="0 0 400 580" className="w-full h-full max-w-lg">
+                    <svg viewBox="0 0 400 570" className="w-full h-full max-w-lg">
                         <defs>
-                            <filter id="ink-soft" x="-10%" y="-10%" width="120%" height="120%">
-                                <feGaussianBlur stdDeviation="0.4" result="blur" />
-                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                            </filter>
-                            <marker id="arrow-sm" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto" fill="#5a1a1a">
-                                <path d="M0,0 L5,2.5 L0,5 L0.8,2.5 z" />
+                            <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                                <path d="M0,0 L7,3.5 L0,7 L1,3.5 z" fill="#8b0000" />
                             </marker>
-                            <linearGradient id="lung-active" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#f0e8d8" />
-                                <stop offset="100%" stopColor="#d8c8b0" />
+                            <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+                                <feGaussianBlur stdDeviation="5" result="b"/>
+                                <feComposite in="SourceGraphic" in2="b" operator="over"/>
+                            </filter>
+                            <linearGradient id="body-fill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#f3ede2"/>
+                                <stop offset="100%" stopColor="#ede5d8"/>
+                            </linearGradient>
+                            <linearGradient id="ll" x1="1" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#d8cfc0"/><stop offset="100%" stopColor="#bfb49e"/>
+                            </linearGradient>
+                            <linearGradient id="lr" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stopColor="#d8cfc0"/><stop offset="100%" stopColor="#bfb49e"/>
+                            </linearGradient>
+                            <linearGradient id="ll-on" x1="1" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#dfc490"/><stop offset="100%" stopColor="#b88848"/>
+                            </linearGradient>
+                            <linearGradient id="lr-on" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stopColor="#dfc490"/><stop offset="100%" stopColor="#b88848"/>
                             </linearGradient>
                         </defs>
 
-                        {/* SILHOUETTE */}
-                        <g stroke="#2C3E50" strokeWidth="1.2" fill="none" opacity="0.35" filter="url(#ink-soft)">
-                            <path d="M155 105 C 152 65, 178 35, 215 35 C 252 35, 268 65, 265 105 C 265 128, 258 142, 252 158 L 252 195 Q 315 205, 355 225" strokeLinecap="round" />
-                            <path d="M155 105 Q 152 138, 162 150 Q 175 160, 175 195 Q 125 205, 85 225" strokeLinecap="round" />
-                            <path d="M85 225 Q 72 300, 80 445 Q 84 540, 100 570" strokeDasharray="4,6" opacity="0.4" />
-                            <path d="M355 225 Q 368 300, 360 445 Q 356 540, 340 570" strokeDasharray="4,6" opacity="0.4" />
-                        </g>
+                        {/* BODY — filled silhouette */}
+                        <path d="M197 108 L 197 122 C 164 129, 110 152, 102 176 L 98 468 Q 215 490, 332 468 L 328 176 C 320 152, 266 129, 233 122 L 233 108 Z"
+                            fill="url(#body-fill)" stroke="#3d3220" strokeWidth="1.6" strokeLinejoin="round"/>
+                        <ellipse cx="215" cy="62" rx="41" ry="46" fill="url(#body-fill)" stroke="#3d3220" strokeWidth="1.6"/>
+                        <path d="M197 107 L 197 124 Q 215 130, 233 124 L 233 107" fill="url(#body-fill)" stroke="#3d3220" strokeWidth="1.3"/>
+
+                        {/* Ribcage */}
+                        <line x1="215" y1="195" x2="215" y2="418" stroke="#3d3220" strokeWidth="0.8" opacity="0.22"/>
+                        {[0,1,2,3,4,5,6].map(i => (
+                            <React.Fragment key={`rib${i}`}>
+                                <path d={`M214 ${202+i*33} C 197 ${206+i*33}, 156 ${220+i*33}, 132 ${232+i*33}`}
+                                    fill="none" stroke="#3d3220" strokeWidth="0.85" opacity="0.18" strokeLinecap="round"/>
+                                <path d={`M216 ${202+i*33} C 233 ${206+i*33}, 274 ${220+i*33}, 298 ${232+i*33}`}
+                                    fill="none" stroke="#3d3220" strokeWidth="0.85" opacity="0.18" strokeLinecap="round"/>
+                            </React.Fragment>
+                        ))}
+                        <path d="M132 418 Q 175 436, 215 438 Q 255 436, 298 418" fill="none" stroke="#3d3220" strokeWidth="0.8" opacity="0.16"/>
+
+                        {/* Larynx — always visible in neck */}
+                        <path d="M204 128 L 200 158 L 215 166 L 230 158 L 226 128 Z"
+                            fill="#ece6da" stroke="#3d3220" strokeWidth="1.2" opacity="0.6" strokeLinejoin="round"/>
+                        <ellipse cx="215" cy="164" rx="13" ry="5" fill="none" stroke="#3d3220" strokeWidth="0.9" opacity="0.3"/>
+                        <line x1="208" y1="145" x2="222" y2="145" stroke="#3d3220" strokeWidth="1" strokeLinecap="round" opacity="0.35"/>
+                        <text x="238" y="140" fontSize="7.5" fontStyle="italic" fontFamily="Georgia,serif" fill="#3d3220" opacity="0.3">λάρυγξ</text>
 
                         {/* BRAIN */}
-                        <g style={{opacity: stage >= 1 ? 1 : 0.08, transition:'opacity 0.7s'}}>
-                            <path d="M178 62 C 172 42, 200 36, 212 52 C 224 36, 252 42, 247 62 C 263 73, 252 94, 230 99 C 210 108, 190 98, 178 62 Z"
-                                fill={stage >= 1 ? "#ede9df" : "#e8e4da"} stroke="#2C3E50" strokeWidth="1.5" />
-                            <path d="M188 62 Q 198 52, 208 66 Q 218 52, 236 62" stroke="#2C3E50" strokeWidth="0.5" fill="none" opacity="0.5" />
-                            <path d="M184 75 Q 200 68, 216 78" stroke="#2C3E50" strokeWidth="0.5" fill="none" opacity="0.4" />
+                        <g style={{opacity: stage >= 1 ? 1 : stage === 0 ? 0.32 : 0.1, transition:'opacity 0.7s'}}>
+                            {stage >= 1 && (
+                                <ellipse cx="215" cy="53" rx="32" ry="28" fill="#f5a060" opacity="0.18" filter="url(#glow)">
+                                    <animate attributeName="opacity" values="0.12;0.28;0.12" dur="2.2s" repeatCount="indefinite"/>
+                                </ellipse>
+                            )}
+                            <path d="M187 50 C 181 30, 200 22, 213 33 C 219 22, 236 22, 243 35 C 253 28, 258 46, 250 57 C 246 66, 236 72, 224 73 C 218 76, 210 76, 204 73 C 189 68, 184 60, 187 50 Z"
+                                fill={stage >= 1 ? "#dfc898" : "#dad5ca"} stroke="#3d3220" strokeWidth="1.2"/>
+                            <path d="M195 46 Q 205 37, 213 45 Q 220 36, 231 45 Q 237 37, 245 48" fill="none" stroke="#3d3220" strokeWidth="0.75" opacity="0.42"/>
+                            <path d="M190 58 Q 202 50, 213 57 Q 224 49, 234 58" fill="none" stroke="#3d3220" strokeWidth="0.65" opacity="0.34"/>
+                            <path d="M192 68 Q 205 61, 215 67 Q 225 61, 236 68" fill="none" stroke="#3d3220" strokeWidth="0.55" opacity="0.26"/>
+                            <line x1="215" y1="24" x2="215" y2="73" stroke="#3d3220" strokeWidth="0.65" opacity="0.28"/>
                         </g>
 
                         {/* TRACHEA */}
-                        <g style={{opacity: stage >= 3 ? 1 : 0.15, transition:'opacity 0.7s'}}>
-                            <rect x="199" y="198" width="32" height="102" rx="3" fill="none" stroke="#2C3E50" strokeWidth="1" opacity="0.4" />
-                            {[...Array(7)].map((_, i) => (
-                                <path key={i} d={`M199 ${210 + i * 13} Q 215 ${215 + i * 13}, 231 ${210 + i * 13}`}
-                                    stroke="#2C3E50" strokeWidth="0.8" fill="none" opacity="0.5" />
+                        <g style={show(3)}>
+                            <line x1="207" y1="166" x2="207" y2="300" stroke="#3d3220" strokeWidth="1.2"/>
+                            <line x1="223" y1="166" x2="223" y2="300" stroke="#3d3220" strokeWidth="1.2"/>
+                            {[...Array(9)].map((_, i) => (
+                                <path key={i} d={`M207 ${177+i*14} Q 215 ${182+i*14}, 223 ${177+i*14}`}
+                                    fill="none" stroke="#3d3220" strokeWidth="1" opacity="0.46"/>
                             ))}
-                            {stage === 3 && (
-                                <text x="240" y="252" fontSize="9" fontStyle="italic" fontFamily="Georgia, serif" fill="#2C3E50" opacity="0.7">προρρυθμίζει</text>
-                            )}
+                            <path d="M207 300 Q 215 308, 223 300" fill="none" stroke="#3d3220" strokeWidth="1" opacity="0.4"/>
                         </g>
 
                         {/* LUNGS */}
-                        <g style={{opacity: stage >= 2 ? 1 : 0.08, transition:'opacity 0.7s'}}>
-                            <path d="M199 300 Q 138 312, 128 402 Q 138 498, 199 476 Z"
-                                fill={stage >= 2 ? "url(#lung-active)" : "#e8e4da"} stroke="#2C3E50" strokeWidth="1.5" />
-                            <path d="M231 300 Q 292 312, 302 402 Q 292 498, 231 476 Z"
-                                fill={stage >= 2 ? "url(#lung-active)" : "#e8e4da"} stroke="#2C3E50" strokeWidth="1.5" />
-                            <path d="M128 476 Q 215 448, 302 476" stroke="#2C3E50" strokeWidth="1" fill="none" strokeDasharray="5,3" opacity={stage >= 2 ? 0.4 : 0} />
-                            {stage === 2 && (
-                                <text x="310" y="398" fontSize="9" fontStyle="italic" fontFamily="Georgia, serif" fill="#5a1a1a" opacity="0.8">ὕλη τις οἰκεία</text>
-                            )}
+                        <g style={show(2)}>
+                            <path d="M208 300 C 186 307, 142 328, 130 402 C 124 448, 146 474, 200 472 L 208 460 Z"
+                                fill={stage >= 2 ? "url(#ll-on)" : "url(#ll)"} stroke="#3d3220" strokeWidth="1.4"/>
+                            <path d="M208 314 C 190 326, 160 352, 152 382" fill="none" stroke="#3d3220" strokeWidth="0.75" opacity={stage >= 2 ? 0.28 : 0.08}/>
+                            <path d="M222 300 C 244 307, 288 328, 300 402 C 306 448, 284 474, 230 472 L 222 460 Z"
+                                fill={stage >= 2 ? "url(#lr-on)" : "url(#lr)"} stroke="#3d3220" strokeWidth="1.4"/>
+                            <path d="M222 314 C 240 326, 270 352, 278 382" fill="none" stroke="#3d3220" strokeWidth="0.75" opacity={stage >= 2 ? 0.28 : 0.08}/>
+                            <path d="M130 472 Q 215 454, 300 472" fill="none" stroke="#3d3220" strokeWidth="1.2" strokeDasharray="5,3" opacity={stage >= 2 ? 0.48 : 0.12}/>
                         </g>
 
-                        {/* STAGE 1: PSYCHIC PNEUMA / NERVE */}
+                        {/* STAGE 0 — Three Pneumata */}
+                        {stage === 0 && (
+                            <g fontFamily="Georgia,serif" fontStyle="italic">
+                                <circle cx="215" cy="52" r="5" fill="#8b0000" opacity="0.5">
+                                    <animate attributeName="opacity" values="0.35;0.8;0.35" dur="2s" repeatCount="indefinite"/>
+                                </circle>
+                                <line x1="258" y1="48" x2="221" y2="51" stroke="#5a1a1a" strokeWidth="0.85" opacity="0.55"/>
+                                <text x="260" y="52" fontSize="9.5" fill="#5a1a1a" opacity="0.85">ψυχικόν</text>
+                                <circle cx="200" cy="330" r="4.5" fill="#8b0000" opacity="0.38">
+                                    <animate attributeName="r" values="4;5.5;4" dur="1.2s" repeatCount="indefinite"/>
+                                    <animate attributeName="opacity" values="0.3;0.65;0.3" dur="1.2s" repeatCount="indefinite"/>
+                                </circle>
+                                <line x1="96" y1="328" x2="196" y2="330" stroke="#5a1a1a" strokeWidth="0.85" opacity="0.48"/>
+                                <text x="54" y="323" fontSize="9.5" fill="#5a1a1a" opacity="0.78">ζωτικόν</text>
+                                <text x="62" y="335" fontSize="8.5" fill="#5a1a1a" opacity="0.5">(καρδία)</text>
+                                <circle cx="250" cy="408" r="4" fill="#8b0000" opacity="0.3">
+                                    <animate attributeName="opacity" values="0.2;0.5;0.2" dur="3.2s" repeatCount="indefinite"/>
+                                </circle>
+                                <line x1="308" y1="406" x2="255" y2="408" stroke="#5a1a1a" strokeWidth="0.85" opacity="0.44"/>
+                                <text x="310" y="402" fontSize="9.5" fill="#5a1a1a" opacity="0.78">φυσικόν</text>
+                                <text x="316" y="414" fontSize="8.5" fill="#5a1a1a" opacity="0.5">(ἧπαρ)</text>
+                            </g>
+                        )}
+
+                        {/* STAGE 1 — Recurrent laryngeal nerve */}
                         <g style={{opacity: stage >= 1 ? 1 : 0, transition:'opacity 0.7s'}}>
-                            <path d="M212 98 C 205 148, 198 195, 200 300"
-                                stroke="#8b0000" strokeWidth="1.5" fill="none" strokeDasharray="4 3">
-                                <animate attributeName="stroke-dashoffset" from="56" to="0" dur="2.5s" repeatCount="indefinite" />
+                            <path d="M220 75 C 230 100, 234 132, 234 166 C 235 210, 238 258, 238 298 C 242 318, 252 330, 244 318 C 236 308, 228 305, 226 318 C 225 290, 224 240, 223 200 C 223 175, 222 158, 220 145"
+                                stroke="#8b0000" strokeWidth="2" fill="none" strokeDasharray="7 3" strokeLinecap="round">
+                                <animate attributeName="stroke-dashoffset" from="80" to="0" dur="2.8s" repeatCount="indefinite"/>
                             </path>
-                            <text x="168" y="75" fontSize="9" fontStyle="italic" fontFamily="Georgia, serif" fill="#5a1a1a" opacity="0.9">ψυχικὸν πνεῦμα</text>
-                            <line x1="212" y1="78" x2="215" y2="98" stroke="#5a1a1a" strokeWidth="0.6" opacity="0.4" />
+                            <line x1="185" y1="78" x2="218" y2="74" stroke="#5a1a1a" strokeWidth="0.85" opacity="0.6"/>
+                            <text x="108" y="80" fontSize="9.5" fontStyle="italic" fontFamily="Georgia,serif" fill="#5a1a1a">ψυχικὸν πνεῦμα</text>
+                            <line x1="256" y1="316" x2="244" y2="320" stroke="#8b0000" strokeWidth="0.8" opacity="0.6"/>
+                            <text x="258" y="313" fontSize="8" fontStyle="italic" fontFamily="Georgia,serif" fill="#8b0000">παλινδρομοῦν</text>
+                            <text x="264" y="324" fontSize="8" fontStyle="italic" fontFamily="Georgia,serif" fill="#8b0000">νεῦρον</text>
                         </g>
 
-                        {/* STAGE 2: COMPRESSION */}
+                        {/* STAGE 2 — Compression / ἐκφύσησις */}
                         <g style={{opacity: stage >= 2 ? 1 : 0, transition:'opacity 0.7s'}}>
-                            {[0, 1, 2].map(i => (
-                                <path key={`l${i}`} d={`M108 ${352 + i * 28} L 128 ${360 + i * 28}`}
-                                    stroke="#5a1a1a" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
+                            {[0,1,2,3].map(i => (
+                                <path key={`la${i}`} d={`M110 ${314+i*40} L 133 ${320+i*40}`}
+                                    stroke="#8b0000" strokeWidth="2.2" strokeLinecap="round" markerEnd="url(#arr)">
+                                    <animate attributeName="d"
+                                        values={`M104 ${314+i*40} L 127 ${320+i*40}; M98 ${314+i*40} L 121 ${320+i*40}; M104 ${314+i*40} L 127 ${320+i*40}`}
+                                        dur="1.9s" repeatCount="indefinite"/>
+                                </path>
                             ))}
-                            {[0, 1, 2].map(i => (
-                                <path key={`r${i}`} d={`M322 ${352 + i * 28} L 302 ${360 + i * 28}`}
-                                    stroke="#5a1a1a" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
+                            {[0,1,2,3].map(i => (
+                                <path key={`ra${i}`} d={`M320 ${314+i*40} L 297 ${320+i*40}`}
+                                    stroke="#8b0000" strokeWidth="2.2" strokeLinecap="round" markerEnd="url(#arr)">
+                                    <animate attributeName="d"
+                                        values={`M326 ${314+i*40} L 303 ${320+i*40}; M332 ${314+i*40} L 309 ${320+i*40}; M326 ${314+i*40} L 303 ${320+i*40}`}
+                                        dur="1.9s" repeatCount="indefinite"/>
+                                </path>
                             ))}
-                            <path d="M215 555 L 215 498" stroke="#8b0000" strokeWidth="1.8" markerEnd="url(#arrow-sm)">
-                                <animate attributeName="d" values="M215 558 L 215 498; M215 562 L 215 502; M215 558 L 215 498" dur="2.2s" repeatCount="indefinite" />
+                            <path d="M215 488 L 215 466" stroke="#8b0000" strokeWidth="3" markerEnd="url(#arr)">
+                                <animate attributeName="d" values="M215 492 L 215 470; M215 498 L 215 476; M215 492 L 215 470" dur="1.9s" repeatCount="indefinite"/>
                             </path>
-                            <path d="M92 402 L 120 402" stroke="#8b0000" strokeWidth="1.8" markerEnd="url(#arrow-sm)">
-                                <animate attributeName="d" values="M88 402 L 118 402; M84 402 L 114 402; M88 402 L 118 402" dur="2.2s" repeatCount="indefinite" />
-                            </path>
-                            <path d="M338 402 L 310 402" stroke="#8b0000" strokeWidth="1.8" markerEnd="url(#arrow-sm)">
-                                <animate attributeName="d" values="M342 402 L 312 402; M346 402 L 316 402; M342 402 L 312 402" dur="2.2s" repeatCount="indefinite" />
-                            </path>
+                            <text x="54" y="500" fontSize="9.5" fontStyle="italic" fontFamily="Georgia,serif" fill="#5a1a1a">ἐκφύσησις</text>
+                            <line x1="132" y1="496" x2="148" y2="484" stroke="#5a1a1a" strokeWidth="0.85" opacity="0.55"/>
+                            <text x="222" y="506" fontSize="9" fontStyle="italic" fontFamily="Georgia,serif" fill="#5a1a1a">ῥώμη</text>
+                            <text x="310" y="400" fontSize="9" fontStyle="italic" fontFamily="Georgia,serif" fill="#5a1a1a">ὕλη τις</text>
+                            <text x="310" y="413" fontSize="9" fontStyle="italic" fontFamily="Georgia,serif" fill="#5a1a1a">οἰκεία</text>
                         </g>
 
-                        {/* STAGE 3+: PARTICLES */}
+                        {/* STAGE 3 — Preprocessing label */}
+                        {stage === 3 && (
+                            <g>
+                                <line x1="223" y1="234" x2="252" y2="230" stroke="#5a1a1a" strokeWidth="0.85" opacity="0.55"/>
+                                <text x="254" y="233" fontSize="9.5" fontStyle="italic" fontFamily="Georgia,serif" fill="#5a1a1a">προρρυθμίζει</text>
+                            </g>
+                        )}
+
+                        {/* STAGE 3+ — Particles */}
                         <g style={{opacity: stage >= 3 ? 1 : 0, transition:'opacity 0.7s'}}>
-                            {particles.map((p) => (
-                                <circle key={p.id} r={p.r} fill="#8b0000" opacity="0.7">
+                            {particles.map(p => (
+                                <circle key={p.id} r={p.r} fill="#8b0000" opacity="0.82">
                                     <animateMotion
-                                        dur={stage >= 5 ? (stage >= 6 ? (p.durStage6 + 's') : '0.08s') : (stage >= 4 ? (p.durStage4 + 's') : (p.durDefault + 's'))}
-                                        repeatCount="indefinite"
-                                        path={`M${p.pathOffset1} 440 C ${p.pathOffset1} 390, ${p.pathOffset2} 290, 215 148`}
+                                        dur={pdur(p)} repeatCount="indefinite"
+                                        path={`M${p.x} 458 C ${p.x} 392, 215 330, 215 248 C 215 206, 215 182, 215 166`}
                                         begin={`${p.begin}s`}
-                                        keyPoints={stage >= 5 ? "0;0.88;1" : "0;1"}
-                                        keyTimes={stage >= 5 ? "0;0.94;1" : "0;1"}
+                                        keyPoints={stage >= 5 ? "0;0.84;1" : "0;1"}
+                                        keyTimes={stage >= 5 ? "0;0.92;1" : "0;1"}
                                         calcMode="linear"
                                     />
                                 </circle>
                             ))}
                         </g>
 
-                        {/* STAGE 4: GLOTTIS */}
+                        {/* STAGE 4 — Glottis + ἴλιγγος */}
                         <g style={{opacity: stage >= 4 ? 1 : 0, transition:'opacity 0.7s'}}>
-                            <ellipse cx="215" cy="178" rx="16" ry="6" fill="#fff" stroke="#2C3E50" strokeWidth="1.8" />
-                            <path d="M205 178 L 225 178" stroke="#2C3E50" strokeWidth={stage >= 5 ? "3" : "2"} strokeLinecap="round">
-                                {stage >= 5 ? (
-                                    <animate attributeName="d" values="M202 178 L 228 178; M214 178 L 216 178; M202 178 L 228 178" dur="0.18s" repeatCount="indefinite" />
-                                ) : (
-                                    <animate attributeName="d" values="M202 178 L 228 178; M211 178 L 219 178; M202 178 L 228 178" dur="1.1s" repeatCount="indefinite" />
+                            <ellipse cx="215" cy="145" rx="14" ry="5.5" fill="white" stroke="#8b0000" strokeWidth="2.2">
+                                {stage === 4 && (
+                                    <animate attributeName="ry" values="5.5;1.5;5.5" dur="1.3s" repeatCount="indefinite"/>
+                                )}
+                            </ellipse>
+                            <path d="M204 145 L 226 145" stroke="#8b0000" strokeWidth="3" strokeLinecap="round">
+                                {stage === 4 && (
+                                    <animate attributeName="d" values="M204 145 L 226 145; M212 145 L 218 145; M204 145 L 226 145" dur="1.3s" repeatCount="indefinite"/>
+                                )}
+                                {stage >= 5 && (
+                                    <animate attributeName="d" values="M213 145 L 217 145; M215 145 L 215 145; M213 145 L 217 145" dur="0.18s" repeatCount="indefinite"/>
                                 )}
                             </path>
-                            <text x="238" y="174" fontSize="9" fontStyle="italic" fontFamily="Georgia, serif" fill="#2C3E50" opacity="0.75">γλωττίς</text>
-
+                            <line x1="230" y1="139" x2="254" y2="127" stroke="#3d3220" strokeWidth="0.85" opacity="0.6"/>
+                            <text x="256" y="125" fontSize="10" fontStyle="italic" fontFamily="Georgia,serif" fill="#3d3220">γλωττίς</text>
                             {stage === 4 && (
-                                <g opacity="0.6">
-                                    <ellipse cx="197" cy="185" rx="6" ry="3" fill="none" stroke="#8b0000" strokeWidth="0.8" strokeDasharray="2,2">
-                                        <animateTransform attributeName="transform" type="rotate" from="0 197 185" to="360 197 185" dur="3s" repeatCount="indefinite" />
+                                <g opacity="0.75">
+                                    <ellipse cx="196" cy="153" rx="9" ry="4" fill="none" stroke="#8b0000" strokeWidth="1.1" strokeDasharray="3,2">
+                                        <animateTransform attributeName="transform" type="rotate" from="0 196 153" to="360 196 153" dur="2.2s" repeatCount="indefinite"/>
                                     </ellipse>
-                                    <ellipse cx="233" cy="185" rx="6" ry="3" fill="none" stroke="#8b0000" strokeWidth="0.8" strokeDasharray="2,2">
-                                        <animateTransform attributeName="transform" type="rotate" from="360 233 185" to="0 233 185" dur="3s" repeatCount="indefinite" />
+                                    <ellipse cx="234" cy="153" rx="9" ry="4" fill="none" stroke="#8b0000" strokeWidth="1.1" strokeDasharray="3,2">
+                                        <animateTransform attributeName="transform" type="rotate" from="360 234 153" to="0 234 153" dur="2.2s" repeatCount="indefinite"/>
                                     </ellipse>
-                                    <text x="152" y="194" fontSize="8" fontStyle="italic" fontFamily="Georgia, serif" fill="#8b0000" opacity="0.8">ἴλιγγος</text>
-                                </g>
-                            )}
-
-                            {stage === 5 && (
-                                <g>
-                                    <circle cx="215" cy="178" r="8" stroke="#8b0000" strokeWidth="2" fill="none" opacity="0">
-                                        <animate attributeName="r" values="2;22" dur="0.35s" repeatCount="indefinite" />
-                                        <animate attributeName="opacity" values="0.9;0" dur="0.35s" repeatCount="indefinite" />
-                                    </circle>
-                                    <circle cx="215" cy="178" r="4" stroke="#8b0000" strokeWidth="1.2" fill="none" opacity="0">
-                                        <animate attributeName="r" values="1;14" dur="0.35s" begin="0.1s" repeatCount="indefinite" />
-                                        <animate attributeName="opacity" values="0.8;0" dur="0.35s" begin="0.1s" repeatCount="indefinite" />
-                                    </circle>
-                                    <text x="238" y="185" fontSize="8" fontStyle="italic" fontFamily="Georgia, serif" fill="#8b0000" opacity="0.85">πληγή</text>
+                                    <line x1="158" y1="162" x2="186" y2="156" stroke="#8b0000" strokeWidth="0.85" opacity="0.65"/>
+                                    <text x="102" y="164" fontSize="10" fontStyle="italic" fontFamily="Georgia,serif" fill="#8b0000">ἴλιγγος</text>
                                 </g>
                             )}
                         </g>
 
-                        {/* STAGE 6: VOICE */}
-                        <g style={{opacity: stage >= 6 ? 1 : 0, transition:'opacity 0.7s'}}>
-                            <path d="M215 158 Q 252 138, 282 158" fill="none" stroke="#8b0000" strokeWidth="2" opacity="0.6">
-                                <animate attributeName="d" values="M215 158 Q 252 138, 282 158; M215 158 Q 305 96, 358 158" dur="1.6s" repeatCount="indefinite" />
-                                <animate attributeName="opacity" values="0.8;0" dur="1.6s" repeatCount="indefinite" />
-                            </path>
-                            <path d="M215 158 Q 178 138, 148 158" fill="none" stroke="#8b0000" strokeWidth="2" opacity="0.6">
-                                <animate attributeName="d" values="M215 158 Q 178 138, 148 158; M215 158 Q 125 96, 72 158" dur="1.6s" repeatCount="indefinite" />
-                                <animate attributeName="opacity" values="0.8;0" dur="1.6s" repeatCount="indefinite" />
-                            </path>
-                            <path d="M215 148 Q 252 125, 290 148" fill="none" stroke="#8b0000" strokeWidth="1.2" opacity="0.4">
-                                <animate attributeName="d" values="M215 148 Q 252 125, 290 148; M215 148 Q 310 80, 370 148" dur="1.6s" begin="0.4s" repeatCount="indefinite" />
-                                <animate attributeName="opacity" values="0.6;0" dur="1.6s" begin="0.4s" repeatCount="indefinite" />
-                            </path>
-                            <text x="178" y="126" fontSize="15" fontStyle="italic" fontFamily="Georgia, serif" fill="#8b0000" letterSpacing="3" opacity="0.9">φωνή</text>
-                        </g>
-
-                        {/* STAGE 0: THREE PNEUMATA LABELS */}
-                        {stage === 0 && (
-                            <g fontFamily="Georgia, serif" fontStyle="italic">
-                                <text x="260" y="72" fontSize="8.5" fill="#5a1a1a" opacity="0.75">ψυχικόν</text>
-                                <line x1="252" y1="70" x2="235" y2="75" stroke="#5a1a1a" strokeWidth="0.5" opacity="0.4" />
-                                <text x="314" y="370" fontSize="8.5" fill="#5a1a1a" opacity="0.75">ζωτικόν</text>
-                                <text x="314" y="382" fontSize="8.5" fill="#5a1a1a" opacity="0.75">(heart)</text>
-                                <text x="96" y="430" fontSize="8.5" fill="#5a1a1a" opacity="0.75">φυσικόν</text>
-                                <text x="96" y="442" fontSize="8.5" fill="#5a1a1a" opacity="0.75">(liver)</text>
-                                <circle cx="215" cy="75" r="3" fill="#8b0000" opacity="0.4" />
-                                <circle cx="310" cy="355" r="3" fill="#8b0000" opacity="0.3">
-                                    <animate attributeName="opacity" values="0.3;0.6;0.3" dur="2.5s" repeatCount="indefinite" />
-                                </circle>
-                                <circle cx="110" cy="415" r="3" fill="#8b0000" opacity="0.3">
-                                    <animate attributeName="opacity" values="0.3;0.6;0.3" dur="3s" begin="0.8s" repeatCount="indefinite" />
-                                </circle>
+                        {/* STAGE 5 — Strike (πληγή) */}
+                        {stage === 5 && (
+                            <g>
+                                {[0,1,2].map(i => (
+                                    <circle key={i} cx="215" cy="145" stroke="#8b0000" strokeWidth={2.4-i*0.5} fill="none" r="3" opacity="0">
+                                        <animate attributeName="r" values={`${2+i*2};${24+i*7}`} dur="0.44s" begin={`${i*0.13}s`} repeatCount="indefinite"/>
+                                        <animate attributeName="opacity" values="0.9;0" dur="0.44s" begin={`${i*0.13}s`} repeatCount="indefinite"/>
+                                    </circle>
+                                ))}
+                                <line x1="230" y1="138" x2="256" y2="124" stroke="#8b0000" strokeWidth="0.9" opacity="0.85"/>
+                                <text x="258" y="122" fontSize="12" fontStyle="italic" fontFamily="Georgia,serif" fill="#8b0000" fontWeight="bold">πληγή</text>
+                                <text x="106" y="173" fontSize="9.5" fontStyle="italic" fontFamily="Georgia,serif" fill="#5a1a1a" opacity="0.8">συμμετρία</text>
                             </g>
                         )}
+
+                        {/* STAGE 6 — Voice (φωνή) */}
+                        <g style={{opacity: stage >= 6 ? 1 : 0, transition:'opacity 0.7s'}}>
+                            {[0,1,2].map(i => (
+                                <React.Fragment key={i}>
+                                    <path d={`M215 86 Q ${244+i*16} ${68-i*5}, ${268+i*22} 86`}
+                                        fill="none" stroke="#8b0000" strokeWidth={2.2-i*0.4} opacity="0">
+                                        <animate attributeName="d"
+                                            values={`M215 86 Q ${244+i*16} ${68-i*5}, ${268+i*22} 86; M215 86 Q ${272+i*20} ${44-i*7}, ${320+i*28} 86`}
+                                            dur="1.9s" begin={`${i*0.24}s`} repeatCount="indefinite"/>
+                                        <animate attributeName="opacity" values="0.88;0" dur="1.9s" begin={`${i*0.24}s`} repeatCount="indefinite"/>
+                                    </path>
+                                    <path d={`M215 86 Q ${186-i*16} ${68-i*5}, ${162-i*22} 86`}
+                                        fill="none" stroke="#8b0000" strokeWidth={2.2-i*0.4} opacity="0">
+                                        <animate attributeName="d"
+                                            values={`M215 86 Q ${186-i*16} ${68-i*5}, ${162-i*22} 86; M215 86 Q ${158-i*20} ${44-i*7}, ${110-i*28} 86`}
+                                            dur="1.9s" begin={`${i*0.24}s`} repeatCount="indefinite"/>
+                                        <animate attributeName="opacity" values="0.88;0" dur="1.9s" begin={`${i*0.24}s`} repeatCount="indefinite"/>
+                                    </path>
+                                </React.Fragment>
+                            ))}
+                            <text x="174" y="30" fontSize="19" fontStyle="italic" fontFamily="Georgia,serif" fill="#8b0000" letterSpacing="3" opacity="0.92">φωνή</text>
+                        </g>
                     </svg>
                 </div>
             );
