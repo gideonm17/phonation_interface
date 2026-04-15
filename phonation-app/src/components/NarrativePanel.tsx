@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useAppStore } from '../store';
 import { GLOSSARY, SCRIPT_ANALYSIS, SCRIPT_LARYNX, SCRIPT_PNEUMA } from '../data/constants';
 
@@ -25,6 +25,10 @@ const TermLink = ({ termKey, children }: { termKey: string, children: React.Reac
 export const NarrativePanel = () => {
     const { currentStepIndex, setStep, activeSection, setActiveSection } = useAppStore();
     const stepRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+
+    useEffect(() => {
+        stepRefs.current = [];
+    }, [activeSection]);
 
     useEffect(() => {
         const activeEl = stepRefs.current[currentStepIndex];
@@ -107,10 +111,10 @@ export const NarrativePanel = () => {
 
     if (!SCRIPT) return null;
 
-    const renderContent = (content: string) => {
-        const parts = content.split(/(<[^>]+>[^<]+<\/[^>]+>)/g);
+    const renderContent = useMemo(() => (content: string) => {
+        const parts = content.split(/(<[A-Za-z_]+>[^<]+<\/[A-Za-z_]+>)/g);
         return parts.map((part, i) => {
-            const match = part.match(/<([^>]+)>([^<]+)<\/[^>]+>/);
+            const match = part.match(/^<([A-Za-z_]+)>([^<]+)<\/\1>$/);
             if (match) {
                 const [_, termKey, text] = match;
                 if (GLOSSARY[termKey]) {
@@ -120,7 +124,7 @@ export const NarrativePanel = () => {
             }
             return part;
         });
-    };
+    }, []);
 
     return (
         <div className="flex flex-col h-full relative">

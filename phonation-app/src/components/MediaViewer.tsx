@@ -1,36 +1,39 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { SCRIPT_PNEUMA, SCRIPT_ANALYSIS, SCRIPT_LARYNX } from '../data/constants';
+import { Step, SCRIPT_PNEUMA, SCRIPT_ANALYSIS, SCRIPT_LARYNX } from '../data/constants';
 import { PneumaVisualizer } from './PneumaVisualizer';
+
+const EMPTY_STEP: Step = { id: '', title: '', content: '', media: 'none' };
 
 export const MediaViewer = () => {
     const { currentStepIndex, activeSection } = useAppStore();
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    // Determine Script safely
-    let SCRIPT: typeof SCRIPT_PNEUMA | typeof SCRIPT_ANALYSIS | typeof SCRIPT_LARYNX | undefined;
+    let SCRIPT: Step[] | undefined;
     if (activeSection === 'pneuma') SCRIPT = SCRIPT_PNEUMA;
     else if (activeSection === 'analysis') SCRIPT = SCRIPT_ANALYSIS;
     else if (activeSection === 'larynx') SCRIPT = SCRIPT_LARYNX;
 
-    // For 'intro', SCRIPT is undefined, so we define a safe default step
-    const step = (SCRIPT && SCRIPT[currentStepIndex as any]) ? SCRIPT[currentStepIndex as any] : (SCRIPT ? SCRIPT[0] : { media: 'none' });
+    const step: Step = SCRIPT ? (SCRIPT[currentStepIndex] ?? SCRIPT[0]) : EMPTY_STEP;
 
     // Handle video playback
     useEffect(() => {
         let rafId: number;
-        if (step && step.media === 'video' && videoRef.current) {
+        if (step.media === 'video' && videoRef.current) {
             const vid = videoRef.current;
             vid.currentTime = step.timeRange ? step.timeRange[0] : 0;
-            vid.play().catch(e => console.log("Autoplay blocked, waiting for interaction"));
+            vid.play().catch(() => { /* autoplay blocked; user interaction will start playback */ });
 
-            const checkTime = () => {
-                if (step.timeRange && vid.currentTime >= step.timeRange[1]) {
-                    vid.currentTime = step.timeRange[0];
-                }
+            if (step.timeRange) {
+                const { timeRange } = step;
+                const checkTime = () => {
+                    if (vid.currentTime >= timeRange[1]) {
+                        vid.currentTime = timeRange[0];
+                    }
+                    rafId = requestAnimationFrame(checkTime);
+                };
                 rafId = requestAnimationFrame(checkTime);
-            };
-            rafId = requestAnimationFrame(checkTime);
+            }
         }
 
         return () => {
@@ -44,7 +47,7 @@ export const MediaViewer = () => {
             <div className="w-full h-full flex items-center justify-center bg-parchment relative overflow-hidden">
                 <img
                     src="reference/main_page_photo.png"
-                    alt="Galen's Glottis"
+                    alt="Galen's Phonatory System — ATLOMY 3D Reconstruction"
                     className="max-w-[70%] max-h-[70%] object-contain drop-shadow-xl saturate-50 opacity-90 transition-all duration-1000 hover:scale-105 hover:opacity-100"
                 />
                 <div className="absolute bottom-10 text-center font-serif text-galen-red/60 text-sm italic">
@@ -54,9 +57,6 @@ export const MediaViewer = () => {
         );
     }
 
-    if (!step) return null;
-
-    // Check if this step uses the Pneuma Visualizer
     if (step.media === 'schematic') {
         return <PneumaVisualizer />;
     }
@@ -78,7 +78,6 @@ export const MediaViewer = () => {
                     src={step.mediaUrl}
                     muted
                     playsInline
-                    loop={true}
                     autoPlay
                     controls
                     className="w-full h-full object-contain bg-black"

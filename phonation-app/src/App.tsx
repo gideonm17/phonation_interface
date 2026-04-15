@@ -1,4 +1,3 @@
-import React from 'react';
 import { Navigation } from './components/Navigation';
 import { MediaViewer } from './components/MediaViewer';
 import { NarrativePanel } from './components/NarrativePanel';

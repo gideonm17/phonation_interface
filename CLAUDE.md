@@ -58,7 +58,7 @@ All content lives here as exported constants:
 - `GLOSSARY`: `Record<string, GlossaryEntry>` — medical/Greek terms with definitions and Atlomy lexicon URLs
 - `SCRIPT_LARYNX`, `SCRIPT_PNEUMA`, `SCRIPT_ANALYSIS`: arrays of `Step` objects for each section
 
-The `Step` type (`src/data/constants.ts`) differs from `NarrativeStep` (`src/types.ts`). `Step` is what the current app actually uses and supports `media: 'image' | 'video' | 'schematic' | 'none'` with optional `mediaUrl`, `timeRange`, `greek`, and `reference` fields. `NarrativeStep` in `types.ts` is the older 3D simulation-oriented type (still referenced by `src/data/script.ts`).
+The `Step` type (defined in `src/data/constants.ts`) supports `media: 'image' | 'video' | 'schematic' | 'none'` with optional `mediaUrl`, `timeRange`, `greek`, and `reference` fields.
 
 ### Layout (`src/App.tsx`)
 Split-pane layout: left 2/5 = `NarrativePanel` (text), right 3/5 = `MediaViewer` (image/video/schematic). `Navigation` sits above; `GlossaryCard` and `UrlSync` are overlays.
