@@ -25,7 +25,7 @@ export const GLOSSARY = glossaryData as unknown as Record<string, GlossaryEntry>
 export const SCRIPT_PNEUMA: Step[] = [
     {
         id: "pneuma_intro",
-        title: "I. Pneuma and Voice",
+        title: "Pneuma and Voice",
         content: "Galen recognises three kinds of <Pneuma>pneuma</Pneuma>: natural (φυσικόν) elaborated in the liver, vital (ζωτικόν) in the heart and arteries, and psychic (ψυχικόν) in the brain and nerves. Two of these play distinct roles in phonation: psychic pneuma governs voluntary motor control of the larynx, while breath from the thorax, once forcibly expelled as <Ekphysesis>ἐκφύσησις</Ekphysesis>, furnishes the material substance of voice.",
         media: "schematic",
         reference: "Singer 2020, 'Galen on Pneuma: Between Metaphysical Speculation and Anatomical Theory'; PHP 7.3.27–28"
@@ -77,7 +77,7 @@ export const SCRIPT_PNEUMA: Step[] = [
 export const SCRIPT_LARYNX: Step[] = [
     {
         id: "intro_instrument",
-        title: "The Larynx: Instrument of voice",
+        title: "The Larynx: Instrument of Voice",
         content: "\"The voice, which reports the thoughts of the mind, is the most important of all the works of the soul\" (Galen). The larynx is the instrument through which breath is transformed into voice.",
         media: "image",
         mediaUrl: "reference/glottis_illustration(1).png"
@@ -112,7 +112,7 @@ export const SCRIPT_LARYNX: Step[] = [
     },
     {
         id: "ekphysesis",
-        title: "5. The Material: Ekphysesis",
+        title: "5. The Material: Ekphysēsis",
         content: "\"Phonation requires <Ekphysesis>ἐκφύσησις</Ekphysesis>... a forceful, muscularly generated exhalation with degrees of intensity, and as an activity (ἐνέργεια)... 'a kind of suitable material of voice' (ὕλη τις οἰκεία φωνῆς).\"",
         media: "video",
         mediaUrl: "reference/glottis animation.mp4",
@@ -128,7 +128,7 @@ export const SCRIPT_LARYNX: Step[] = [
     },
     {
         id: "strike",
-        title: "7. The Strike (Plēgē)",
+        title: "7. The Strike (Πληγή)",
         content: "\"For the <Ekphysesis>ἐκφύσησις</Ekphysesis>, which is <Plēgē>struck</Plēgē> by the cartilages of the larynx as if it were struck by some plectrums, becomes voice.\"",
         media: "video",
         mediaUrl: "reference/glottis animation.mp4",
@@ -157,7 +157,7 @@ export const SCRIPT_ANALYSIS: Step[] = [
     },
     {
         id: "analysis_nature_craft",
-        title: "3. Nature vs. Craft",
+        title: "3. Nature over Craft",
         content: "For I think nature is prior in time and wiser in actions than the 'craft'. Therefore, this body (glōttis) is a deed of nature, and that which in the aulos is an invention of skill, that (the invention) would be an imitation of it (the body), invented by a wise man who is able to understand and imitate the deeds of nature. Well, the aulos is useless without its mouthpiece; the evidence proves that. There is no need to yearn to hear the reason in this work, for it was said in the treatise On the Voice, where it was straightforwardly demonstrated that it is not possible to generate a voice without the narrowing of the passage.",
         greek: "καὶ γὰρ καὶ πρότερον, οἶμαι, τῷ χρόνῳ καὶ σοφώτερον τοῖς ἔργοις ἡ φύσις τῆς τέχνης ἐστίν. ὥστ', εἴπερ τουτὶ μὲν τὸ σῶμα φύσεως ἔργον ὑπάρχει, τέχνης δ'εὕρημά ἐστι τὸ κατὰ τοὺς αὐλοὺς, ἐκεῖνο τούτου μίμημα ἂν εἴη, πρὸς ἀνδρὸς εὑρημένον σοφοῦ, γνωρίζειν τε καὶ μιμεῖσθαι τὰ τῆς φύσεως ἔργα δυναμένου. ὅτι μὲν οὖν χωρὶς τῆς γλώττης ἄχρηστος ὁ αὐλὸς, αὐτὸ δείκνυσι τὸ φαινόμενον. αἰτίαν δ' οὐ χρὴ ποθεῖν ἀκούειν ἐν τῷ παρόντι λόγῳ. λέλεκται γὰρ ἐν τῇ περὶ φωνῆς πραγματείᾳ, καθ' ἣν καὶ τοῦτο εὐθὺς ἀποδέδεικται, τὸ μὴ δύνασθαι γενέσθαι φωνὴν ἄνευ τοῦ στενωθῆναι τὴν διέξοδον.",
         media: "image",
@@ -166,7 +166,7 @@ export const SCRIPT_ANALYSIS: Step[] = [
     },
     {
         id: "analysis_narrowing",
-        title: "4. Necessity of Narrowing",
+        title: "4. The Necessity of Narrowing",
         content: "For if only the whole passage would entirely fall back, while the first two cartilages (thyroid and cricoid) are loosed and separated from each other, and the third (arytenoid) lied open, lest ever it would be possible to produce voice: but if the pneuma would be carried with no motion outside, a soundless expiration will be achieved: but if the pneuma would be carried at once and vehemently, what is called \"to sigh\" will be produced. In order that the animal would phonate, it requires a sudden carrying (of pneuma) from all of the parts below, and it requires no less of that and the passage in the larynx to be narrow and not simply narrow, but it is led gradually from the wide to the narrow part, and gradually it widens again back from the narrow part. That is exactly how that body in our current discussion works, which indeed I name glōttis and the tongue of the larynx.",
         greek: "εἰ γὰρ ἀναπεπταμένη τελέως εἴη σύμπασα, κεχαλασμένων μὲν τῶν πρώτων δυοῖν χόνδρων καὶ διεστώτων ἀπ' ἀλλήλων, ἀνεῳγμένου δὲ τοῦ τρίτου, μή ποτ' ἂν δύνασθαι γενέσθαι φωνήν· ἀλλ' εἰ μὲν ἀτρέμα τὸ πνεῦμα ἔξω φέροιτο, τὴν χωρὶς ψόφου συντελουμένην ἐκπνοήν· εἰ δ' ἀθρόως τε καὶ σφοδρῶς, τὸ καλούμενον στενάζειν γιγνόμενον. ἵνα δὲ φωνήσῃ τὸ ζῶον, δεῖσθαι πάντως καὶ τῆς κάτωθεν φορᾶς ἀθροωτέρας, δεῖσθαι δ' οὐδὲν ἧττον ταύτης καὶ τῆς κατὰ τὸν λάρυγγα διεξόδου στενωτέρας, καὶ οὐχ ἁπλῶς γε στενωτέρας, ἀλλὰ κατὰ βραχὺ μὲν ἐξ εὐρέος εἰς στενὸν ἀγομένης, κατὰ βραχὺ δ' ἐκ τοῦ στενοῦ πάλιν εὐρυνομένης. ὅπερ ἀκριβῶς ἐργάζεται τουτὶ τὸ σῶμα τὸ προκείμενον ἐν τῷ λόγῳ νῦν, ὃ δὴ γλωττίδα τε καὶ γλῶσσαν ὀνομάζω λάρυγγος.",
         media: "video",
@@ -202,7 +202,7 @@ export const SCRIPT_ANALYSIS: Step[] = [
     },
     {
         id: "analysis_whirlpool",
-        title: "8. The Whirlpool (Iliggos)",
+        title: "8. The Whirlpool (ἴλιγγος)",
         content: "Indeed, immediately along each aperture, as said, there is a part that is elongated from above downwards, as some narrow line, and yet it is not really narrow: but the membranous substance of the lips is as it is falling into the underlying concavity, and through that it seems more as a wrinkle rather than aperture before the lips unfold. And when they unfold it (the wrinkle) is immediately clearly observed, and clearly the underlying cavity to it. And being each of the apertures from the left and the right as such, some pneuma flows beside them with no reason to open the little-mouth or the filled cavity. Whenever it is pushed vehemently from below, and restrained from above, inasmuch as no more force to go straightforward, as some whirlpool experience, spinning toward the flanks of the passage, falling into them vehemently and arousing easily the membranous growths of each of the passages to the underlying concavities, to those which they incline by nature, filling and blowing through the entire glōttis.",
         greek: "αὐτίκα γέ τοι τὸ τρῆμα καθ' ἑκάτερον, ὡς εἴρηται, μέρος ὑπάρχει, πρόμηκες δ' ἐστὶν ἄνωθεν κάτω, καθάπερ τις γραμμὴ στενή, καίτοι γ' οὐκ ὂν στενόν, ἀλλὰ τὸ τῶν χειλῶν ὑμενῶδες οἷόνπερ καταπῖπτον ἐστὶν εἰς τὴν ὑποκειμένην κοιλότητα, καὶ διὰ τοῦτο καθάπερ ῥυσότης μᾶλλον ἢ τρῆμα φαίνεται πρὶν διαπτυχθῆναι τὰ χείλη. διαπτυχθέντων δὲ σαφῶς μὲν ἤδη καὶ τοῦτο, σαφῶς δὲ καὶ ἡ ὑποκειμένη κοιλότης αὐτῷ θεωρεῖται. τοιούτου δ' ὄντος ἑκατέρου τοῦ τρήματος ἐξ ἀριστερῶν τε καὶ δεξιῶν παραρρεῖ τι πνεῦμα μηδεμίαν αἰτίαν ἔχον δεξιῶν παραρρεῖ τι πνεῦμα μηδεμίαν αἰτίαν ἔχον ἀνοιγνύναι τὸ στόμιον ἢ πληροῦν τὴν κοιλίαν. ὅταν δ' ὠθῆται μὲν κάτωθεν βιαίως, ἴσχηται δ' ἄνωθεν, ἅτε μηκέτι δυνάμενον εὐθυπορεῖν, οἷον ἴλιγγόν τινα παθὸν ἐπιστρέφεταί τε πρὸς τὰ πλάγια τοῦ πόρου καὶ τούτοις ἐμπίπτει βιαίως ἀνατρέπει τε ῥᾳδίως τὰς ὑμενώδεις ἐπιφύσεις ἑκατέρου τῶν πόρων εἰς τὰς ὑποκειμένας κοιλότητας, εἰς ἅσπερ καὶ ῥέπουσι φύσει, πληροῖ τ' αὖ καὶ διαφυσᾷ ‖ σύμπασαν τὴν γλωττίδα.",
         media: "video",
