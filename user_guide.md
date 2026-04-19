@@ -20,12 +20,12 @@ On mobile devices, the Media Viewer appears above the Narrative Panel.
 
 Use the navigation icons at the top to move between sections:
 
-| Icon | Section | Content |
-|------|---------|---------|
-| 🏠 | **Home** | Landing page and introduction |
-| 🛡️ | **Anatomy** | The larynx: cartilages, muscles, and nerves |
-| 🌬️ | **Pneuma & Voice** | The physiology of *pneuma* and voice generation |
-| 📜 | **Textual Analysis** | Original Greek passages alongside English translations |
+| Icon | Section | Steps | Content |
+|------|---------|-------|---------|
+| 🏠 | **Home** | — | Landing page and introduction |
+| 🛡️ | **Anatomy** | 7 | The larynx as Galen describes it: cartilages (thyroid, cricoid, arytenoid), intrinsic muscles, recurrent laryngeal nerves, the glōttis, and the material of voice (ἐκφύσησις), ending with the strike (πληγή) |
+| 🌬️ | **Pneuma & Voice** | 7 | The physiology of voice production step by step — from psychic *pneuma* in the brain, through the trachea, to the glōttis and the emergence of *phōnē*. Accompanied by the Pneuma Visualizer schematic |
+| 📜 | **Textual Analysis** | 10 | Ten passages from *De usu partium* VII.13 in original Greek with English translation, covering the nature of the glōttis, the aulos analogy, necessity of narrowing, laryngeal cavities, and moisture |
 
 ---
 
@@ -62,11 +62,13 @@ The right panel shows different content depending on the current step:
 
 ## 6. Textual Analysis Section
 
-The Analysis section presents Galen's text in a different layout:
+The Analysis section presents ten consecutive passages from *De usu partium* VII.13 (Helmreich / Kühn) in a different layout:
 
-- The **English translation** appears as the main narrative text
-- The **original Greek passage** is displayed in a shaded block above it, in italics
-- The source citation appears at the lower right of each step
+- The **original Greek passage** is displayed first, in a shaded block, in italics
+- The **English translation** appears below it as the main narrative text
+- The **source citation** (Helmreich page and line numbers, Kühn volume and page) appears at the lower right of each step
+
+The ten passages cover: the nature of the glōttis as a unique body part; the aulos analogy; nature over craft; the necessity of narrowing; the muscles and glōttis working together; laryngeal apertures and ventricles; utility and proportionate size; the whirlpool (ἴλιγγος); the membranous material of the glōttis; and the necessity of moisture.
 
 ---
 

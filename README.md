@@ -85,11 +85,21 @@ phonation_interface/
 
 ---
 
+## Content Map
+
+| Section | Steps | Media types |
+|---|---|---|
+| **Anatomy** (`SCRIPT_LARYNX`) | 7 | Image, video |
+| **Pneuma & Voice** (`SCRIPT_PNEUMA`) | 7 | SVG schematic (`PneumaVisualizer`) |
+| **Textual Analysis** (`SCRIPT_ANALYSIS`) | 10 | Image, video |
+
+---
+
 ## Content Editing
 
 ### Adding a narrative step
 
-Add a `Step` object to the appropriate array in `phonation-app/src/data/constants.ts`:
+Add a `Step` object to the appropriate array in `phonation-app/src/data/constants.ts`. Mirror the same object in the corresponding JavaScript array inside `index.html` (the sync script only covers the glossary — script content must be kept in sync manually):
 
 ```ts
 {
@@ -103,11 +113,15 @@ Add a `Step` object to the appropriate array in `phonation-app/src/data/constant
 }
 ```
 
+**TermKey syntax:** `<Key>display text</Key>` where `Key` is an exact key in `glossary.json`. The parser requires the closing tag to match the opening tag (`<Key>...</Key>` not `<Key>...</OtherKey>`). If the key is not found in the glossary, the text renders as plain text without a link.
+
 ### Adding a glossary term
 
 1. Add an entry to `phonation-app/src/data/glossary.json`
 2. Run `npm run sync` from `phonation-app/` to propagate the change to `index.html`
 3. Use `<TermKey>display text</TermKey>` in any step's `content` field to create a clickable link
+
+> **Note:** `npm run sync` only propagates glossary changes. If you edit narrative steps in `constants.ts`, you must also update the corresponding content in `index.html` by hand.
 
 ---
 
