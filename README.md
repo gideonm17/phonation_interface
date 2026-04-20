@@ -8,52 +8,29 @@ The interface synthesises evidence from the Galenic corpus — principally *De A
 
 ---
 
-## Features
-
-- **Step-by-step narrative** — a guided tour through Galen's physiological model across three sections: Anatomy, Pneuma & Voice, and Textual Analysis
-- **Anatomical glossary** — clickable Greek and medical terms open a popup with definitions and links to the [ATLOMY](https://www.atlomy.com) lexicon
-- **Bibliography** — a sidebar button opens a popup listing all primary and secondary sources cited in the interface, with full references formatted to thesis standards, and a note pointing to the full bibliography in the MA thesis and ATLOMY model page
-- **Pneuma Visualizer** — an SVG schematic animation tracing the path of *pneuma* from the brain (*hēgemonikon*) through the nerves, trachea, and larynx to the moment of *plēgē* (strike) and *phōnē* (voice)
-- **Video and image media** — time-range-looped animations and anatomical illustrations from the ATLOMY project, synchronised to the narrative
-- **Shareable URLs** — section and step are encoded in the URL query string; copying the address shares your exact position in the interface
-- **Keyboard navigation** — arrow keys advance or retreat through steps within a section
-
----
-
-## Two Implementations
-
-The project ships in two forms that share the same content:
-
-| | `index.html` | `phonation-app/` |
-|---|---|---|
-| **Purpose** | Portable, distributable | Active development |
-| **Build step** | None | Vite + TypeScript |
-| **Dependencies** | Loaded via CDN at runtime | Installed via npm |
-| **Served** | Any HTTP server | `npm run dev` |
-
----
-
 ## Running Locally
 
-### Standalone (`index.html`)
-
-A local HTTP server is required (CORS blocks direct `file://` access):
+The entire interface is a single file: **`index.html`**. A local HTTP server is required (CORS blocks direct `file://` access):
 
 ```bash
 python3 -m http.server 8000
 # open http://localhost:8000/index.html
 ```
 
-### Vite App (`phonation-app/`)
+No build step, no dependencies to install.
 
-```bash
-cd phonation-app
-npm install
-npm run dev        # development server with hot reload
-npm run build      # tsc + Vite production build
-npm run preview    # preview production build
-npm run sync       # sync glossary.json → index.html
-```
+---
+
+## Features
+
+- **Step-by-step narrative** — a guided tour through Galen's physiological model across three sections: Anatomy, Pneuma & Voice, and Textual Analysis
+- **Anatomical glossary** — clickable Greek and medical terms open a popup with definitions and links to the [ATLOMY](https://www.atlomy.com) lexicon
+- **Bibliography** — a sidebar button opens a modal listing all primary and secondary sources cited in the interface, with full references formatted to thesis standards
+- **Pneuma Visualizer** — an SVG schematic animation tracing the path of *pneuma* from the brain (*hēgemonikon*) through the nerves, trachea, and larynx to the moment of *plēgē* (strike) and *phōnē* (voice)
+- **Video and image media** — time-range-looped animations and anatomical illustrations, synchronised to the narrative
+- **Dark mode** — toggleable via the navigation sidebar
+- **Shareable URLs** — section and step are encoded in the URL query string
+- **Keyboard navigation** — arrow keys advance or retreat through steps
 
 ---
 
@@ -61,79 +38,54 @@ npm run sync       # sync glossary.json → index.html
 
 ```
 phonation_interface/
-├── index.html              # Standalone single-file app (Babel Standalone)
-├── user_guide.md           # End-user guide
-├── reference/              # Static assets: images and videos
-├── scripts/
-│   └── sync-glossary.js    # Syncs glossary.json → index.html
-└── phonation-app/
-    ├── src/
-    │   ├── App.tsx
-    │   ├── store/index.ts          # Zustand state (activeSection, currentStepIndex, activeTerm)
-    │   ├── data/
-    │   │   ├── constants.ts        # All content: GLOSSARY, SCRIPT_LARYNX/PNEUMA/ANALYSIS
-    │   │   └── glossary.json       # Single source of truth for glossary terms
-    │   └── components/
-    │       ├── NarrativePanel.tsx  # Scrolling step list with TermLink parser
-    │       ├── MediaViewer.tsx     # Image / video / PneumaVisualizer switcher
-    │       ├── PneumaVisualizer.tsx# SVG schematic animation
-    │       ├── GlossaryCard.tsx    # Modal popup for glossary entries
-    │       ├── BibliographyCard.tsx# Modal popup listing all cited sources
-    │       ├── Navigation.tsx      # Section switcher sidebar
-    │       └── UrlSync.tsx         # Bidirectional URL ↔ state sync
-    └── public/
-        └── reference/              # Static assets for Vite app
+├── index.html                  # The entire interface — single self-contained file
+├── reference/                  # Static assets: images, video, thesis text
+├── user_guide.md               # End-user guide
+├── CLAUDE.md                   # Developer guidance for Claude Code
+└── phonation-app-archive.zip   # Archived Vite/TypeScript version (no longer maintained)
 ```
 
 ---
 
 ## Content Map
 
-| Section | Steps | Media types |
+| Section | Steps | Media |
 |---|---|---|
-| **Anatomy** (`SCRIPT_LARYNX`) | 7 | Image, video |
-| **Pneuma & Voice** (`SCRIPT_PNEUMA`) | 7 | SVG schematic (`PneumaVisualizer`) |
-| **Textual Analysis** (`SCRIPT_ANALYSIS`) | 10 | Image, video |
+| **Anatomy** | 7 | Images, video |
+| **Pneuma & Voice** | 7 | SVG schematic (PneumaVisualizer) |
+| **Textual Analysis** | 10 | Images, video |
 
 ---
 
-## Content Editing
+## Editing Content
 
-### Adding a narrative step
+All content lives in the `<script type="text/babel">` block of `index.html`.
 
-Add a `Step` object to the appropriate array in `phonation-app/src/data/constants.ts`. Mirror the same object in the corresponding JavaScript array inside `index.html` (the sync script only covers the glossary — script content must be kept in sync manually):
+**Add a narrative step** — append a step object to `SCRIPT_LARYNX`, `SCRIPT_PNEUMA`, or `SCRIPT_ANALYSIS`:
 
-```ts
+```js
 {
     id: 'unique_id',
     title: 'Step Title',
     content: 'Narrative text. Use <TermKey>display text</TermKey> for glossary links.',
-    media: 'image',          // 'image' | 'video' | 'schematic' | 'none'
+    media: 'image',           // 'image' | 'video' | 'schematic' | 'none'
     mediaUrl: 'reference/filename.png',
     reference: 'Galen, UP VII.8',
-    greek: 'Optional Greek passage for the Analysis section.',
+    greek: 'Optional Greek passage (shown in Textual Analysis section).',
 }
 ```
 
-**TermKey syntax:** `<Key>display text</Key>` where `Key` is an exact key in `glossary.json`. The parser requires the closing tag to match the opening tag (`<Key>...</Key>` not `<Key>...</OtherKey>`). If the key is not found in the glossary, the text renders as plain text without a link.
+**Add a glossary term** — add an entry to the `GLOSSARY` object, then reference it with `<TermKey>text</TermKey>` in any step's `content`.
 
-### Adding a glossary term
-
-1. Add an entry to `phonation-app/src/data/glossary.json`
-2. Run `npm run sync` from `phonation-app/` to propagate the change to `index.html`
-3. Use `<TermKey>display text</TermKey>` in any step's `content` field to create a clickable link
-
-> **Note:** `npm run sync` only propagates glossary changes. If you edit narrative steps in `constants.ts`, you must also update the corresponding content in `index.html` by hand.
+**Add a bibliography entry** — add to the `primarySources` or `secondarySources` arrays inside the `BibliographyCard` component.
 
 ---
 
 ## Technologies
 
-- **React 18** with the new JSX transform
-- **Zustand** — minimal state management
-- **Tailwind CSS** — utility-first styling
-- **Vite** — development server and build tool
-- **Babel Standalone** — in-browser JSX compilation for `index.html`
+- **React 18** with Babel Standalone (in-browser JSX compilation — no build step)
+- **Zustand** — state management
+- **Tailwind CSS** — styling via CDN
 
 ---
 
