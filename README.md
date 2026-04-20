@@ -12,6 +12,7 @@ The interface synthesises evidence from the Galenic corpus — principally *De A
 
 - **Step-by-step narrative** — a guided tour through Galen's physiological model across three sections: Anatomy, Pneuma & Voice, and Textual Analysis
 - **Anatomical glossary** — clickable Greek and medical terms open a popup with definitions and links to the [ATLOMY](https://www.atlomy.com) lexicon
+- **Bibliography** — a sidebar button opens a popup listing all primary and secondary sources cited in the interface, with full references formatted to thesis standards, and a note pointing to the full bibliography in the MA thesis and ATLOMY model page
 - **Pneuma Visualizer** — an SVG schematic animation tracing the path of *pneuma* from the brain (*hēgemonikon*) through the nerves, trachea, and larynx to the moment of *plēgē* (strike) and *phōnē* (voice)
 - **Video and image media** — time-range-looped animations and anatomical illustrations from the ATLOMY project, synchronised to the narrative
 - **Shareable URLs** — section and step are encoded in the URL query string; copying the address shares your exact position in the interface
@@ -77,6 +78,7 @@ phonation_interface/
     │       ├── MediaViewer.tsx     # Image / video / PneumaVisualizer switcher
     │       ├── PneumaVisualizer.tsx# SVG schematic animation
     │       ├── GlossaryCard.tsx    # Modal popup for glossary entries
+    │       ├── BibliographyCard.tsx# Modal popup listing all cited sources
     │       ├── Navigation.tsx      # Section switcher sidebar
     │       └── UrlSync.tsx         # Bidirectional URL ↔ state sync
     └── public/

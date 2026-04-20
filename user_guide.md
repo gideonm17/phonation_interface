@@ -72,7 +72,18 @@ The ten passages cover: the nature of the glōttis as a unique body part; the au
 
 ---
 
-## 7. Sharing and Bookmarking
+## 7. Bibliography
+
+A **Bibliography** button (book icon) sits at the bottom of the navigation sidebar.
+
+- Click it to open a popup listing all primary and secondary sources cited in the interface, with full references formatted to the standards of the MA thesis.
+- The popup is divided into three sections: *Galen — Editions Used*, *Classical Authors*, and *Secondary Literature*.
+- A note at the bottom of the popup points to the complete bibliography in the MA thesis and on the ATLOMY model page.
+- Close the popup by pressing **Escape**, clicking the **×** button, or clicking outside the panel.
+
+---
+
+## 8. Sharing and Bookmarking
 
 The URL updates automatically as you navigate. To share your exact position:
 
@@ -84,7 +95,7 @@ The browser **Back button** navigates between sections (not individual steps), s
 
 ---
 
-## 8. Accessibility
+## 9. Accessibility
 
 - All interactive elements are keyboard-navigable
 - Glossary cards can be closed with the Escape key
@@ -92,7 +103,7 @@ The browser **Back button** navigates between sections (not individual steps), s
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 **Blank page or "Script Error"**
 - Ensure you are accessing the interface via `http://localhost:...` and not by opening the file directly (the `file://` protocol blocks external dependencies)
