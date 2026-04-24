@@ -23,7 +23,7 @@ Use the navigation icons at the top to move between sections:
 | Icon | Section | Steps | Content |
 |------|---------|-------|---------|
 | 🏠 | **Home** | — | Landing page and introduction |
-| 🛡️ | **Anatomy** | 7 | The larynx as Galen describes it: cartilages (thyroid, cricoid, arytenoid), intrinsic muscles, recurrent laryngeal nerves, the glōttis, and the material of voice (ἐκφύσησις), ending with the strike (πληγή) |
+| 🛡️ | **Phonation** | 7 | The sequence of phonation as Galen describes it: the larynx as instrument of voice; cartilages (thyroid, cricoid, arytenoid); intrinsic muscles; recurrent laryngeal nerves; the glōttis; the material of voice (ἐκφύσησις); the narrowing; and the strike (πληγή). Each step is accompanied by a dedicated anatomical image, diagram, or animation. |
 | 🌬️ | **Pneuma & Voice** | 7 | The physiology of voice production step by step — from psychic *pneuma* in the brain, through the trachea, to the glōttis and the emergence of *phōnē*. Accompanied by the Pneuma Visualizer schematic |
 | 📜 | **Textual Analysis** | 10 | Ten passages from *De usu partium* VII.13 in original Greek with English translation, covering the nature of the glōttis, the aulos analogy, necessity of narrowing, laryngeal cavities, and moisture |
 
@@ -54,7 +54,9 @@ As you read, certain terms are highlighted in **red**. These are clickable gloss
 
 The right panel shows different content depending on the current step:
 
-- **Anatomical illustrations** — static images from the ATLOMY project
+- **Anatomical illustrations** — images of the larynx, cartilages, and laryngeal nerves, displayed on a parchment background and scaled to fill the panel
+- **Ekphysesis Diagram** — in stage 5 of the *Sequence of Phonation* section, a detailed SVG anatomical diagram traces the creation and upward movement of ἐκφύσησις from the lungs (with intercostal muscles, diaphragm, bronchi, and tracheal cartilage rings) to the larynx, with Greek and English labels throughout
+- **Strike Animation** — in stage 7, a looping two-panel animation contrasts what happens in the trachea (weak impact, no voice) with what happens in the larynx (glōttis narrows, air accelerates, cartilages strike, sound waves and φωνή emerge)
 - **Video animations** — looping clips of laryngeal movement; steps with a defined time range loop within that segment automatically
 - **Pneuma Visualizer** — in the *Pneuma & Voice* section, an SVG schematic traces the journey of *pneuma* from the brain (*hēgemonikon*), through the nerves and trachea, to the glōttis where *plēgē* (the strike) produces *phōnē* (voice). A progress bar at the top shows the current stage.
 
