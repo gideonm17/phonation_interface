@@ -30,6 +30,7 @@ No build step, no dependencies to install.
 - **Ekphysesis Diagram** — a detailed anatomical SVG diagram (stage 5) showing the full pathway of ἐκφύσησις from the lungs through the bronchi and trachea to the larynx, with all supporting structures labelled in Greek and English
 - **Strike Animation** — a side-by-side animated SVG (stage 7) contrasting the insufficient impact in the trachea with the voice-producing impact in the larynx, illustrating the role of the glōttis in achieving proportionality (συμμετρία)
 - **Video and image media** — time-range-looped animations and anatomical illustrations, synchronised to the narrative
+- **Print / Save as PDF** — every step card has a print button offering three options: print the individual step, print the entire current section (one step per page), or print all three sections at once
 - **Dark mode** — toggleable via the navigation sidebar
 - **Shareable URLs** — section and step are encoded in the URL query string
 - **Keyboard navigation** — arrow keys advance or retreat through steps
@@ -100,6 +101,16 @@ All content lives in the `<script type="text/babel">` block of `index.html`.
 ---
 
 ## Version History
+
+### v1.2 — 26 April 2026
+
+**Print / Save as PDF**
+- Each step card now displays a small printer icon button in the top-right corner of its title row
+- Clicking the button opens a dropdown with three options: *Print this step*, *Print entire section* (all steps in the current section, one per page), and *Print all sections* (all three sections in sequence)
+- A matching dropdown is also available in the toolbar next to the search bar
+- Print output suppresses the interface chrome; each step is rendered as clean typeset text (Georgia, 2 cm margins) with the section label, title, Greek passage (if any), narrative content, and source reference
+
+---
 
 ### v1.1 — 24 April 2026
 

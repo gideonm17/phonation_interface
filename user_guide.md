@@ -85,7 +85,23 @@ A **Bibliography** button (book icon) sits at the bottom of the navigation sideb
 
 ---
 
-## 8. Sharing and Bookmarking
+## 8. Printing and Saving as PDF
+
+Every step in the narrative panel has a small **printer icon** in the top-right corner of its title. Clicking it opens a dropdown with three options:
+
+| Option | What it prints |
+|--------|---------------|
+| **Print this step** | Only the step whose button you clicked |
+| **Print entire section** | Every step in the current section, one per page |
+| **Print all sections** | All steps across all three sections in order |
+
+The same dropdown is also available in the toolbar at the top of the narrative panel (next to the search bar), where it always acts on the currently active step.
+
+Print output suppresses the interface chrome — only the step content appears: the section label, step title, Greek passage (if any), narrative text, and source reference, typeset in Georgia with 2 cm margins. Use your browser's *Print to PDF* option to save a PDF file.
+
+---
+
+## 9. Sharing and Bookmarking
 
 The URL updates automatically as you navigate. To share your exact position:
 
@@ -97,7 +113,7 @@ The browser **Back button** navigates between sections (not individual steps), s
 
 ---
 
-## 9. Accessibility
+## 10. Accessibility
 
 - All interactive elements are keyboard-navigable
 - Glossary cards can be closed with the Escape key
@@ -105,7 +121,7 @@ The browser **Back button** navigates between sections (not individual steps), s
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 **Blank page or "Script Error"**
 - Ensure you are accessing the interface via `http://localhost:...` and not by opening the file directly (the `file://` protocol blocks external dependencies)

@@ -119,8 +119,8 @@
         /* Print styles */
         @media print {
             body { overflow: visible !important; background: #fff !important; color: #000 !important; }
+            #root, #error-overlay { display: none !important; }
             #print-target { display: block !important; font-family: Georgia, serif; padding: 2cm; max-width: 800px; margin: 0 auto; }
-            .no-print { display: none !important; }
         }
         #print-target { display: none; }
 
@@ -152,6 +152,7 @@
 <body>
     <div id="error-overlay"></div>
     <div id="root"></div>
+    <div id="print-target"></div>
 
 
     <script>
@@ -1737,13 +1738,12 @@
         };
 
         // --- PRINT HELPER (F6) ---
-        const printStep = (step, section) => {
-            const el = document.getElementById('print-target');
-            if (!el) return;
+        const buildStepHtml = (step, section, isLast) => {
             const openQuote = '\u201c';
             const closeQuote = '\u201d';
             const cleanContent = step.content.replace(/<[^>]+>/g, '');
-            let html = '<div style="color:#666;font-size:0.8em;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5em;">Galen\'s Phonatory System \u2014 ' + section + '</div>';
+            let html = '<div style="page-break-inside:avoid;">';
+            html += '<div style="color:#666;font-size:0.8em;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5em;">Galen\u2019s Phonatory System \u2014 ' + section + '</div>';
             html += '<h1 style="font-size:1.8em;color:#8b0000;margin:0 0 0.5em;">' + step.title + '</h1>';
             if (step.greek) {
                 html += '<div style="margin:1em 0;padding:1em;background:#f9f6ed;border-left:3px solid #8b0000;font-style:italic;font-size:1.1em;line-height:1.7;">' + openQuote + step.greek + closeQuote + '</div>';
@@ -1752,7 +1752,18 @@
             if (step.reference) {
                 html += '<div style="margin-top:1.5em;padding-top:0.5em;border-top:1px solid #ccc;font-size:0.85em;color:#666;font-style:italic;text-align:right;">' + step.reference + '</div>';
             }
-            el.innerHTML = html;
+            html += '</div>';
+            if (!isLast) html += '<div style="page-break-after:always;"></div>';
+            return html;
+        };
+
+        const printContent = (entries) => {
+            // entries: array of { step, section }
+            const el = document.getElementById('print-target');
+            if (!el) return;
+            el.innerHTML = entries.map(({ step, section }, i) =>
+                buildStepHtml(step, section, i === entries.length - 1)
+            ).join('');
             window.print();
             setTimeout(function() { el.innerHTML = ''; }, 1000);
         };
@@ -1765,6 +1776,34 @@
             } = useAppStore();
             const stepRefs = useRef([]);
             const searchRef = useRef(null);
+            const [showPrintMenu, setShowPrintMenu] = React.useState(false);
+            const printMenuRef = useRef(null);
+            const [stepPrintMenu, setStepPrintMenu] = React.useState(null);
+            const stepPrintMenuRef = useRef(null);
+
+            // Close toolbar print menu on outside click
+            useEffect(() => {
+                if (!showPrintMenu) return;
+                const handler = (e) => {
+                    if (printMenuRef.current && !printMenuRef.current.contains(e.target)) {
+                        setShowPrintMenu(false);
+                    }
+                };
+                document.addEventListener('mousedown', handler);
+                return () => document.removeEventListener('mousedown', handler);
+            }, [showPrintMenu]);
+
+            // Close per-step print menu on outside click
+            useEffect(() => {
+                if (stepPrintMenu === null) return;
+                const handler = (e) => {
+                    if (stepPrintMenuRef.current && !stepPrintMenuRef.current.contains(e.target)) {
+                        setStepPrintMenu(null);
+                    }
+                };
+                document.addEventListener('mousedown', handler);
+                return () => document.removeEventListener('mousedown', handler);
+            }, [stepPrintMenu]);
 
             // Scroll active step into view
             useEffect(() => {
@@ -1943,14 +1982,47 @@
                                     </button>
                                 )}
                             </div>
-                            {/* F6: Print button */}
-                            <button
-                                onClick={() => printStep(SCRIPT[currentStepIndex], sectionLabel)}
-                                title="Print / Save as PDF"
-                                className="p-2 rounded-lg border border-black/20 text-black/40 hover:text-galen-red hover:border-galen-red/40 transition-all no-print"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                            </button>
+                            {/* F6: Print dropdown */}
+                            <div className="relative no-print" ref={printMenuRef}>
+                                <button
+                                    onClick={() => setShowPrintMenu(v => !v)}
+                                    title="Print / Save as PDF"
+                                    className="p-2 rounded-lg border border-black/20 text-black/40 hover:text-galen-red hover:border-galen-red/40 transition-all"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                </button>
+                                {showPrintMenu && (
+                                    <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-black/15 rounded-lg shadow-lg py-1 min-w-max" style={{fontSize:'13px',fontFamily:'sans-serif'}}>
+                                        <button
+                                            className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-black/70 hover:text-galen-red"
+                                            onClick={() => { setShowPrintMenu(false); printContent([{ step: SCRIPT[currentStepIndex], section: sectionLabel }]); }}
+                                        >
+                                            Print this step
+                                        </button>
+                                        <button
+                                            className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-black/70 hover:text-galen-red"
+                                            onClick={() => { setShowPrintMenu(false); printContent(SCRIPT.map(step => ({ step, section: sectionLabel }))); }}
+                                        >
+                                            Print entire section
+                                        </button>
+                                        <div className="border-t border-black/10 my-1" />
+                                        <button
+                                            className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-black/70 hover:text-galen-red"
+                                            onClick={() => {
+                                                setShowPrintMenu(false);
+                                                const all = [
+                                                    ...SCRIPT_LARYNX.map(step => ({ step, section: 'Sequence of Phonation' })),
+                                                    ...SCRIPT_PNEUMA.map(step => ({ step, section: 'Pneuma & Voice' })),
+                                                    ...SCRIPT_ANALYSIS.map(step => ({ step, section: 'Textual Analysis' })),
+                                                ];
+                                                printContent(all);
+                                            }}
+                                        >
+                                            Print all sections
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                             {/* F1: Greek/English toggle (Analysis only) */}
                             {activeSection === 'analysis' && (
                                 <button
@@ -1997,7 +2069,43 @@
                                     style={{animation:`fadeIn 0.45s ease-out ${Math.min(index * 0.07, 0.45)}s both`}}
                                     onClick={() => setStep(index)}
                                 >
-                                    <h2 className="text-2xl font-bold mb-4 font-serif text-galen-red">{step.title}</h2>
+                                    <div className="flex items-start justify-between mb-4 gap-2">
+                                        <h2 className="text-2xl font-bold font-serif text-galen-red">{step.title}</h2>
+                                        <div className="relative no-print shrink-0 mt-1" ref={stepPrintMenu === index ? stepPrintMenuRef : null}>
+                                            <button
+                                                title="Print / Save as PDF"
+                                                onClick={e => { e.stopPropagation(); setStepPrintMenu(stepPrintMenu === index ? null : index); }}
+                                                className="p-1.5 rounded border border-black/15 text-black/30 hover:text-galen-red hover:border-galen-red/40 transition-all"
+                                            >
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                            </button>
+                                            {stepPrintMenu === index && (
+                                                <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-black/15 rounded-lg shadow-lg py-1 min-w-max" style={{fontSize:'13px',fontFamily:'sans-serif'}}>
+                                                    <button
+                                                        className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-black/70 hover:text-galen-red"
+                                                        onClick={e => { e.stopPropagation(); setStepPrintMenu(null); printContent([{ step, section: sectionLabel }]); }}
+                                                    >Print this step</button>
+                                                    <button
+                                                        className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-black/70 hover:text-galen-red"
+                                                        onClick={e => { e.stopPropagation(); setStepPrintMenu(null); printContent(SCRIPT.map(s => ({ step: s, section: sectionLabel }))); }}
+                                                    >Print entire section</button>
+                                                    <div className="border-t border-black/10 my-1" />
+                                                    <button
+                                                        className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-black/70 hover:text-galen-red"
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            setStepPrintMenu(null);
+                                                            printContent([
+                                                                ...SCRIPT_LARYNX.map(s => ({ step: s, section: 'Sequence of Phonation' })),
+                                                                ...SCRIPT_PNEUMA.map(s => ({ step: s, section: 'Pneuma & Voice' })),
+                                                                ...SCRIPT_ANALYSIS.map(s => ({ step: s, section: 'Textual Analysis' })),
+                                                            ]);
+                                                        }}
+                                                    >Print all sections</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
 
                                     {/* F1: Greek/English toggle — B1: fix quote rendering */}
                                     {activeSection === 'analysis' && step.greek && greekVisible && (
@@ -2222,8 +2330,6 @@
                     <UrlSync />
                     <GlossaryCard />
                     <BibliographyCard />
-                    {/* Hidden print target */}
-                    <div id="print-target" />
                     <Navigation />
                     {/* Media panel (hidden when glossary is open on mobile) */}
                     <div className={`${glossaryOpen ? 'hidden md:flex' : ''} w-full md:w-3/5 h-[50vh] md:h-full bg-parchment relative shadow-inner order-1 md:order-2`}>
