@@ -85,7 +85,21 @@ A **Bibliography** button (book icon) sits at the bottom of the navigation sideb
 
 ---
 
-## 8. Printing and Saving as PDF
+## 8. Comments
+
+Each step has a **comment section** at the bottom, visible for every step in the narrative panel.
+
+- Click **+ Add comment** to open the comment form
+- Enter your **name** (required) and **affiliation** (optional, e.g. university or institution)
+- Type your comment and click **Post**
+
+Your name and affiliation are remembered for future visits so you do not need to re-enter them.
+
+Comments are stored in the cloud and are shared across all users of the interface — they are never erased when the interface is updated.
+
+---
+
+## 9. Printing and Saving as PDF
 
 Every step in the narrative panel has a small **printer icon** in the top-right corner of its title. Clicking it opens a dropdown with three options:
 
@@ -101,7 +115,7 @@ Print output suppresses the interface chrome — only the step content appears: 
 
 ---
 
-## 9. Sharing and Bookmarking
+## 10. Sharing and Bookmarking
 
 The URL updates automatically as you navigate. To share your exact position:
 
@@ -113,7 +127,7 @@ The browser **Back button** navigates between sections (not individual steps), s
 
 ---
 
-## 10. Accessibility
+## 11. Accessibility
 
 - All interactive elements are keyboard-navigable
 - Glossary cards can be closed with the Escape key
@@ -121,7 +135,7 @@ The browser **Back button** navigates between sections (not individual steps), s
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 **Blank page or "Script Error"**
 - Ensure you are accessing the interface via `http://localhost:...` and not by opening the file directly (the `file://` protocol blocks external dependencies)

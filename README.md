@@ -31,6 +31,7 @@ No build step, no dependencies to install.
 - **Strike Animation** — a side-by-side animated SVG (stage 7) contrasting the insufficient impact in the trachea with the voice-producing impact in the larynx, illustrating the role of the glōttis in achieving proportionality (συμμετρία)
 - **Video and image media** — time-range-looped animations and anatomical illustrations, synchronised to the narrative
 - **Print / Save as PDF** — every step card has a print button offering three options: print the individual step, print the entire current section (one step per page), or print all three sections at once
+- **Persistent comments** — each step has a comment section backed by Firebase Firestore; comments are stored in the cloud and survive interface updates. Users enter a name and optional affiliation; name is remembered across sessions
 - **Dark mode** — toggleable via the navigation sidebar
 - **Shareable URLs** — section and step are encoded in the URL query string
 - **Keyboard navigation** — arrow keys advance or retreat through steps
@@ -101,6 +102,17 @@ All content lives in the `<script type="text/babel">` block of `index.html`.
 ---
 
 ## Version History
+
+### v1.2.1 — 26 April 2026
+
+**Persistent comment section (replaces local notes)**
+- The per-step notes textarea has been replaced with a shared comment section backed by Firebase Firestore
+- Each step displays all posted comments (name, optional affiliation, date, text) and a collapsible *Add comment* form
+- Comments are stored in the cloud under the `peri-phones` Firebase project and are never erased by interface updates
+- Name and affiliation are remembered in `localStorage` so returning users need not re-enter them
+- If Firebase is not configured, the section displays a clear placeholder message rather than crashing
+
+---
 
 ### v1.2 — 26 April 2026
 
