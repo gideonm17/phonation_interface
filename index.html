@@ -147,6 +147,12 @@
                 min-width: 44px;
                 min-height: 44px;
             }
+            /* App shell height = viewport minus fixed nav bar (3.5rem = 56px).
+               This gives the flex container a definite height so that children
+               using height:100% (h-full) resolve correctly on Safari. */
+            .app-shell {
+                height: calc(100vh - 3.5rem) !important;
+            }
             /* Intro vignette: bottom-fade on mobile (text panel is below) */
             .hero-vignette {
                 background: linear-gradient(to bottom, transparent 50%, var(--parchment) 100%) !important;
@@ -2481,17 +2487,17 @@
         const App = () => {
             const { glossaryOpen } = useAppStore();
             return (
-                <div className="flex flex-col md:flex-row h-screen w-full font-serif overflow-hidden pb-14 md:pb-0">
+                <div className="app-shell flex flex-col md:flex-row h-screen w-full font-serif overflow-hidden">
                     <UrlSync />
                     <GlossaryCard />
                     <BibliographyCard />
                     <Navigation />
                     {/* Media panel (hidden when glossary is open on mobile) */}
-                    <div className={`${glossaryOpen ? 'hidden md:flex' : ''} w-full md:w-3/5 h-[42vh] md:h-full bg-parchment relative shadow-inner order-1 md:order-2`}>
+                    <div className={`${glossaryOpen ? 'hidden md:flex' : ''} w-full md:w-3/5 h-[42vh] min-h-0 overflow-hidden md:h-full bg-parchment relative shadow-inner order-1 md:order-2`}>
                         <MediaViewer />
                     </div>
                     {/* Text/Glossary panel */}
-                    <div className="w-full md:w-2/5 flex-1 md:flex-none md:h-full bg-white z-10 shadow-2xl relative order-2 md:order-1 flex flex-col">
+                    <div className="w-full md:w-2/5 flex-1 min-h-0 overflow-hidden md:flex-none md:h-full bg-white z-10 shadow-2xl relative order-2 md:order-1 flex flex-col">
                         {glossaryOpen ? <GlossaryBrowser /> : <NarrativePanel />}
                     </div>
                 </div>
